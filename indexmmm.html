@@ -1,230 +1,462 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الغياب - الدعم المهاري (المعلم: محمد رضا)</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-
-    <!-- Firebase SDK (compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
-    <style>
-        /* نفس الستايلات السابقة */
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; }
-        .card { border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-bottom: 25px; border: none; }
-        .card-header { background: linear-gradient(135deg, #2c3e66 0%, #1a2a4a 100%); color: white; border-radius: 20px 20px 0 0 !important; font-weight: bold; padding: 15px 20px; }
-        .teacher-name { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 8px 20px; border-radius: 30px; font-size: 1rem; font-weight: bold; display: inline-block; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn-primary { background: #2c3e66; border: none; }
-        .btn-primary:hover { background-color: #1a2a4a; }
-        .btn-success { background: #27ae60; border: none; }
-        .btn-success:hover { background-color: #219150; }
-        .btn-warning { background: #f39c12; border: none; color: white; }
-        .btn-warning:hover { background-color: #d68910; color: white; }
-        .btn-info { background: #3498db; border: none; color: white; }
-        .btn-info:hover { background-color: #2980b9; color: white; }
-        .btn-danger { background: #e74c3c; border: none; }
-        .btn-danger:hover { background-color: #c0392b; }
-        .stats-card { background: white; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid #eee; }
-        .stats-number { font-size: 2rem; font-weight: bold; color: #2c3e66; }
-        .status-present { background-color: #28a745 !important; color: white !important; cursor: pointer; transition: all 0.2s; }
-        .status-late { background-color: #ffc107 !important; color: #856404 !important; cursor: pointer; transition: all 0.2s; }
-        .status-absent { background-color: #dc3545 !important; color: white !important; cursor: pointer; transition: all 0.2s; }
-        .status-none { background-color: #e9ecef !important; color: #6c757d !important; cursor: pointer; transition: all 0.2s; }
-        .status-none:hover, .status-present:hover, .status-late:hover, .status-absent:hover { opacity: 0.9; transform: scale(1.05); }
-        .class-badge { background: #e7e9ed; color: #2c3e66; padding: 3px 10px; border-radius: 15px; font-size: 0.85rem; }
-        .upload-area { border: 2px dashed #27ae60; border-radius: 15px; padding: 30px; text-align: center; cursor: pointer; background: #f8f9fa; margin: 10px 0; transition: background 0.3s; }
-        .upload-area:hover { background: #e8f5e9; }
-        .pulse-animation { animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
-        .day-item { cursor: pointer; transition: all 0.2s; }
-        .day-item:hover { background-color: #f8f9fa; transform: translateX(-5px); }
-        .day-item.inactive { opacity: 0.5; text-decoration: line-through; }
-
-        /* شاشة الدخول */
-        #loginScreen { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #2c3e66 0%, #1a2a4a 100%); padding: 20px; }
-        #loginScreen .card { width: 420px; padding: 35px 30px; border-radius: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); background: white; }
-        #loginScreen .card h3 { color: #2c3e66; font-weight: bold; }
-        #loginScreen .btn-primary { width: 100%; padding: 12px; font-size: 1.1rem; }
-        #appContent { display: none; }
-        .user-badge { background: rgba(255,255,255,0.2); padding: 5px 18px; border-radius: 20px; color: white; font-size: 0.9rem; display: inline-block; }
-        .logout-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 20px; padding: 5px 18px; cursor: pointer; transition: all 0.3s; font-size: 0.9rem; }
-        .logout-btn:hover { background: rgba(255,255,255,0.25); }
-        .login-error { color: #dc3545; font-size: 0.9rem; margin-top: 12px; display: none; padding: 10px; background: #f8d7da; border-radius: 10px; border: 1px solid #f5c6cb; }
-        .login-success { color: #28a745; font-size: 0.9rem; margin-top: 10px; display: none; }
-        .login-loading { display: none; margin-top: 10px; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .login-icon { font-size: 3.5rem; color: #2c3e66; }
-        @media (max-width: 576px) { #loginScreen .card { width: 95%; padding: 25px 20px; } .header-bar { flex-direction: column; align-items: stretch; text-align: center; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام متابعة الغياب والدعم الذكي - المعلم: محمد رضا</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<style>
+body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
+.card{border-radius:20px;box-shadow:0 5px 15px rgba(0,0,0,.08);margin-bottom:25px;border:none;}
+.card-header{background:linear-gradient(135deg,#2c3e66 0%,#1a2a4a 100%);color:#fff;border-radius:20px 20px 0 0!important;font-weight:bold;padding:15px 20px;}
+.teacher-name{background:linear-gradient(135deg,#f39c12 0%,#e67e22 100%);color:#fff;padding:8px 20px;border-radius:30px;font-size:1rem;font-weight:bold;display:inline-block;margin-bottom:15px;box-shadow:0 2px 5px rgba(0,0,0,.1);}
+.btn-primary{background:#2c3e66;border:none;}.btn-primary:hover{background:#1a2a4a;}
+.btn-success{background:#27ae60;border:none;}.btn-success:hover{background:#219150;}
+.btn-warning{background:#f39c12;border:none;color:#fff;}.btn-warning:hover{background:#d68910;color:#fff;}
+.btn-info{background:#3498db;border:none;color:#fff;}.btn-info:hover{background:#2980b9;color:#fff;}
+.btn-danger{background:#e74c3c;border:none;}.btn-danger:hover{background:#c0392b;}
+.stats-card{background:#fff;border-radius:15px;padding:15px;text-align:center;border:1px solid #eee;}
+.stats-number{font-size:2rem;font-weight:bold;color:#2c3e66;}
+.status-present{background:#28a745!important;color:#fff!important;transition:.2s;}
+.status-late{background:#ffc107!important;color:#856404!important;transition:.2s;}
+.status-absent{background:#dc3545!important;color:#fff!important;transition:.2s;}
+.status-none{background:#e9ecef!important;color:#6c757d!important;transition:.2s;}
+.class-badge{background:#e7e9ed;color:#2c3e66;padding:3px 10px;border-radius:15px;font-size:.85rem;}
+.upload-area{border:2px dashed #27ae60;border-radius:15px;padding:30px;text-align:center;cursor:pointer;background:#f8f9fa;margin:10px 0;transition:.3s;}
+.upload-area:hover{background:#e8f5e9;}
+.pulse-animation{animation:pulse-red 2s infinite;}
+@keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(220,53,69,.7);}70%{box-shadow:0 0 0 10px rgba(220,53,69,0);}100%{box-shadow:0 0 0 0 rgba(220,53,69,0);}}
+.day-item{cursor:pointer;transition:.2s;}.day-item:hover{background:#f8f9fa;transform:translateX(-5px);}
+.day-item.inactive{opacity:.5;text-decoration:line-through;}
+#loginScreen{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#2c3e66 0%,#1a2a4a 100%);padding:20px;}
+#loginScreen .card{width:420px;padding:35px 30px;border-radius:30px;box-shadow:0 20px 60px rgba(0,0,0,.4);background:#fff;}
+#loginScreen .card h3{color:#2c3e66;font-weight:bold;}
+#loginScreen .btn-primary{width:100%;padding:12px;font-size:1.1rem;}
+#appContent{display:none;}
+.user-badge{background:rgba(255,255,255,.2);padding:5px 18px;border-radius:20px;color:#fff;font-size:.9rem;display:inline-block;}
+.logout-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:5px 18px;cursor:pointer;transition:.3s;font-size:.9rem;}
+.logout-btn:hover{background:rgba(255,255,255,.25);}
+.login-error{color:#dc3545;font-size:.9rem;margin-top:12px;display:none;padding:10px;background:#f8d7da;border-radius:10px;border:1px solid #f5c6cb;}
+.login-success{color:#28a745;font-size:.9rem;margin-top:10px;display:none;}
+.login-loading{display:none;margin-top:10px;}
+.header-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.login-icon{font-size:3.5rem;color:#2c3e66;}
+/* main nav */
+.main-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+.main-nav .nav-btn{background:#fff;border:1px solid #dfe3e8;border-radius:14px;padding:10px 20px;font-weight:bold;color:#2c3e66;cursor:pointer;transition:.2s;font-size:.95rem;}
+.main-nav .nav-btn:hover{background:#eef2f7;}
+.main-nav .nav-btn.active{background:linear-gradient(135deg,#2c3e66,#1a2a4a);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(44,62,102,.3);}
+.view{display:none;}.view.active{display:block;}
+/* categories */
+.cat-card{border-radius:16px;padding:16px;color:#fff;cursor:pointer;transition:.25s;height:100%;box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.cat-card:hover{transform:translateY(-5px);box-shadow:0 10px 22px rgba(0,0,0,.2);}
+.cat-card .cat-count{font-size:2.2rem;font-weight:bold;line-height:1;}
+.cat-card .cat-title{font-size:.95rem;font-weight:bold;margin-top:6px;}
+.cat-A{background:linear-gradient(135deg,#e74c3c,#c0392b);}
+.cat-B{background:linear-gradient(135deg,#8e44ad,#6c3483);}
+.cat-C{background:linear-gradient(135deg,#2980b9,#1f618d);}
+.cat-D{background:linear-gradient(135deg,#16a085,#117a65);}
+.cat-E{background:linear-gradient(135deg,#d35400,#a04000);}
+.cat-F{background:linear-gradient(135deg,#7f8c8d,#566573);}
+.level-badge{padding:4px 12px;border-radius:14px;color:#fff;font-size:.82rem;font-weight:bold;display:inline-block;}
+.lv-green{background:#27ae60;}.lv-yellow{background:#f1c40f;color:#7d6608;}
+.lv-orange{background:#e67e22;}.lv-red{background:#e74c3c;}
+.cat-header{color:#fff!important;font-weight:bold;border-radius:0!important;}
+.ind-row td{vertical-align:middle;}
+.progress-thin{height:14px;border-radius:10px;background:#e9ecef;overflow:hidden;}
+.progress-thin > div{height:100%;border-radius:10px;transition:width .5s;}
+.tab-sub .nav-link{color:#2c3e66;font-weight:bold;border-radius:10px 10px 0 0;}
+.tab-sub .nav-link.active{background:#2c3e66;color:#fff;}
+.week-box{border:1px solid #e3e7ee;border-radius:14px;padding:14px;margin-bottom:12px;background:#fbfcfe;}
+.week-box h6{color:#2c3e66;font-weight:bold;}
+.student-chip{display:inline-block;background:#eef2f7;border-radius:12px;padding:4px 12px;margin:3px;font-size:.85rem;color:#2c3e66;}
+.disclaimer{background:#fff8e1;border:1px solid #ffe082;border-radius:14px;padding:14px;color:#7d6608;font-size:.9rem;}
+/* ====== شريط تغيير حالة الجميع ====== */
+.bulk-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#eef2f7;border:1px solid #dfe3e8;border-radius:14px;padding:10px 14px;margin-bottom:14px;}
+.bulk-bar .bulk-title{font-weight:bold;color:#2c3e66;margin-inline-end:6px;}
+.bulk-bar .btn{font-weight:bold;}
+/* ====== قائمة حالة الطالب ====== */
+.status-select{font-weight:bold;border:none!important;min-width:150px;cursor:pointer;box-shadow:none!important;}
+.status-select.status-present{background:#28a745!important;color:#fff!important;}
+.status-select.status-late{background:#ffc107!important;color:#856404!important;}
+.status-select.status-absent{background:#dc3545!important;color:#fff!important;}
+.status-select.status-none{background:#e9ecef!important;color:#6c757d!important;}
+.status-select:hover{opacity:.92;}
+/* ====== بطاقة التقارير المتقدمة ====== */
+.report-range-box{background:#f8f9fa;border:1px solid #e3e7ee;border-radius:14px;padding:14px;margin-top:12px;}
+.report-type-btn{font-weight:bold;transition:.2s;}
+.report-type-btn:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(0,0,0,.15);}
+#reportPreview .card{margin-top:0;border-radius:14px;overflow:hidden;}
+#reportPreview .card-header{border-radius:14px 14px 0 0!important;background:linear-gradient(135deg,#2c3e66,#1a2a4a);color:#fff;font-weight:bold;padding:12px 18px;}
+.report-range-label{display:inline-block;background:#e7e9ed;color:#2c3e66;padding:4px 12px;border-radius:14px;font-size:.85rem;font-weight:bold;margin-inline-end:6px;}
+@media (max-width:576px){#loginScreen .card{width:95%;padding:25px 20px;}.header-bar{flex-direction:column;align-items:stretch;text-align:center;}}
+</style>
 </head>
 <body>
 
-<!-- ==================== شاشة تسجيل الدخول ==================== -->
+<!-- ==================== شاشة الدخول ==================== -->
 <div id="loginScreen">
-    <div class="card text-center">
-        <div class="mb-3">
-            <i class="fas fa-chalkboard-teacher login-icon"></i>
-            <h3 class="mt-2">نظام متابعة الغياب</h3>
-            <p class="text-muted">المعلم: محمد رضا</p>
-            <hr>
-        </div>
-        <form id="loginForm">
-            <div class="mb-3 text-start">
-                <label class="form-label fw-bold">📧 البريد الإلكتروني</label>
-                <input type="email" id="loginEmail" class="form-control form-control-lg" placeholder="example@email.com" required autocomplete="email">
-            </div>
-            <div class="mb-3 text-start">
-                <label class="form-label fw-bold">🔑 كلمة المرور</label>
-                <input type="password" id="loginPassword" class="form-control form-control-lg" placeholder="••••••••" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
-                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-            </button>
-            <div id="loginError" class="login-error">❌ البريد أو كلمة المرور غير صحيحة</div>
-            <div id="loginSuccess" class="login-success">✅ جاري تسجيل الدخول...</div>
-            <div class="login-loading" id="loginLoading">
-                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                <span class="me-2">جاري التحقق...</span>
-            </div>
-        </form>
-        <hr>
-        <small class="text-muted">⚠️ فقط المعلم يمكنه تسجيل الدخول والتعديل</small>
-        <small class="text-muted d-block mt-1">📌 الجميع يمكنهم المشاهدة بدون تسجيل</small>
+  <div class="card text-center">
+    <div class="mb-3">
+      <i class="fas fa-chalkboard-teacher login-icon"></i>
+      <h3 class="mt-2">نظام المتابعة الذكي</h3>
+      <p class="text-muted">المعلم: محمد رضا</p>
+      <hr>
     </div>
+    <form id="loginForm">
+      <div class="mb-3 text-start">
+        <label class="form-label fw-bold">📧 البريد الإلكتروني</label>
+        <input type="email" id="loginEmail" class="form-control form-control-lg" placeholder="example@email.com" required autocomplete="email">
+      </div>
+      <div class="mb-3 text-start">
+        <label class="form-label fw-bold">🔑 كلمة المرور</label>
+        <input type="password" id="loginPassword" class="form-control form-control-lg" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" id="loginBtn"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+      <div id="loginError" class="login-error">❌ البريد أو كلمة المرور غير صحيحة</div>
+      <div id="loginSuccess" class="login-success">✅ جاري تسجيل الدخول...</div>
+      <div class="login-loading" id="loginLoading">
+        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+        <span class="me-2">جاري التحقق...</span>
+      </div>
+    </form>
+    <hr>
+    <small class="text-muted">⚠️ فقط المعلم يمكنه تسجيل الدخول والتعديل</small>
+    <small class="text-muted d-block mt-1">📌 الجميع يمكنهم المشاهدة بدون تسجيل</small>
+  </div>
 </div>
 
 <!-- ==================== محتوى التطبيق ==================== -->
 <div id="appContent">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <!-- شريط المستخدم -->
-                <div class="header-bar">
-                    <div class="teacher-name">
-                        <i class="fas fa-chalkboard-teacher"></i> المعلم: محمد رضا
-                    </div>
-                    <div>
-                        <span class="user-badge" id="userEmail">👤 مرحباً!</span>
-                        <span class="logout-btn ms-2" onclick="logout()">🚪 تسجيل خروج</span>
-                    </div>
-                </div>
+<div class="container-fluid">
 
-                <!-- إحصائيات -->
-                <div class="row mb-4 mt-3">
-                    <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-users fa-2x text-primary mb-2"></i><h6>إجمالي الطلاب</h6><div class="stats-number" id="totalStudents">0</div></div></div>
-                    <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-calendar-check fa-2x text-success mb-2"></i><h6>إجمالي الحضور</h6><div class="stats-number" id="totalPresent">0</div></div></div>
-                    <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-clock fa-2x text-warning mb-2"></i><h6>إجمالي التأخر</h6><div class="stats-number" id="totalLate">0</div></div></div>
-                    <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-calendar-times fa-2x text-danger mb-2"></i><h6>إجمالي الغياب</h6><div class="stats-number" id="totalAbsent">0</div></div></div>
-                </div>
-
-                <!-- شريط الأدوات -->
-                <div class="card">
-                    <div class="card-header"><i class="fas fa-chalkboard-user"></i> نظام متابعة الغياب - الدعم المهاري</div>
-                    <div class="card-body">
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-2 col-6">
-                                <label>📅 التاريخ</label>
-                                <input type="text" id="datePicker" class="form-control" placeholder="اختر التاريخ">
-                            </div>
-                            <div class="col-md-2 col-6">
-                                <label>🎓 الصف</label>
-                                <select id="classFilter" class="form-select">
-                                    <option value="">جميع الصفوف</option>
-                                    <option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option>
-                                    <option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option>
-                                    <option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 col-6"><label>🔍 عرض</label><button id="viewBtn" class="btn btn-primary w-100">عرض الكشف</button></div>
-                            <div class="col-md-2 col-6"><label>💾 تهيئة</label><button id="initDayBtn" class="btn btn-success w-100">تهيئة اليوم</button></div>
-                            <div class="col-md-2 col-6"><label>📎 رفع طلاب</label><button id="uploadBtn" class="btn btn-warning w-100">رفع Excel</button></div>
-                            <div class="col-md-2 col-6"><label>📊 تقرير</label><button id="reportBtn" class="btn btn-info w-100">تقرير عام</button></div>
-                        </div>
-
-                        <ul class="nav nav-tabs">
-                            <li class="nav-item"><button class="nav-link active" data-tab="attendance">📋 كشف الحضور</button></li>
-                            <li class="nav-item"><button class="nav-link" data-tab="students">👥 إدارة الطلاب</button></li>
-                        </ul>
-
-                        <div id="attendanceTab" class="tab-pane mt-3 fade show active">
-                            <div class="table-responsive">
-                                <table class="table table-hover table-bordered align-middle">
-                                    <thead class="table-light"><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>الحالة (اضغط للتغيير)</th><th>الملاحظات</th></tr></thead>
-                                    <tbody id="attendanceBody"><tr><td colspan="5" class="text-center text-muted">اختر تاريخ واضغط على "عرض الكشف"</td></tr></tbody>
-                                </table>
-                            </div>
-                            <button id="exportSheetBtn" class="btn btn-danger mt-2 w-100">📥 تصدير الكشف الحالي</button>
-                        </div>
-
-                        <div id="studentsTab" class="tab-pane mt-3 fade">
-                            <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded border shadow-sm flex-wrap gap-2">
-                                <div>
-                                    <button id="addStudentBtn" class="btn btn-success btn-lg">
-                                        <i class="fas fa-user-plus"></i> إضافة طالب جديد
-                                    </button>
-                                </div>
-                                <div>
-                                    <button id="exportListBtn" class="btn btn-info me-2">
-                                        <i class="fas fa-file-download"></i> تصدير القائمة
-                                    </button>
-                                    <button id="deleteAllBtn" class="btn btn-danger btn-lg pulse-animation">
-                                        <i class="fas fa-trash-alt"></i> حذف جميع الطلاب
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-bordered align-middle">
-                                    <thead class="table-dark"><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>إجراءات</th></tr></thead>
-                                    <tbody id="studentsBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="header-bar">
+    <div class="teacher-name"><i class="fas fa-chalkboard-teacher"></i> المعلم: محمد رضا</div>
+    <div>
+      <span class="user-badge" id="userEmail">👤 مرحباً!</span>
+      <span class="logout-btn ms-2" onclick="logout()">🚪 تسجيل خروج</span>
     </div>
+  </div>
+
+  <!-- شريط التنقل الرئيسي -->
+  <div class="main-nav mt-3">
+    <div class="nav-btn active" data-view="dashboard"><i class="fas fa-gauge-high"></i> لوحة التحكم</div>
+    <div class="nav-btn" data-view="attendance"><i class="fas fa-clipboard-check"></i> الحضور والغياب</div>
+    <div class="nav-btn" data-view="students"><i class="fas fa-users"></i> الطلاب</div>
+    <div class="nav-btn" data-view="support"><i class="fas fa-hands-holding-child"></i> التصنيف والدعم</div>
+    <div class="nav-btn" data-view="reports"><i class="fas fa-chart-column"></i> التقارير والبحث</div>
+  </div>
+
+  <!-- ==================== لوحة التحكم ==================== -->
+  <div id="view-dashboard" class="view active">
+    <div class="row mb-4">
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-users fa-2x text-primary mb-2"></i><h6>إجمالي الطلاب</h6><div class="stats-number" id="dashTotal">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-hand-holding-heart fa-2x text-warning mb-2"></i><h6>يحتاجون دعمًا</h6><div class="stats-number" id="dashNeed">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-circle-check fa-2x text-success mb-2"></i><h6>متابعة عادية</h6><div class="stats-number" id="dashNormal">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-triangle-exclamation fa-2x text-danger mb-2"></i><h6>دعم مكثف</h6><div class="stats-number" id="dashIntensive">0</div></div></div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-seedling fa-2x text-success mb-2"></i><h6>دعم بسيط</h6><div class="stats-number" id="dashSimple">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-arrow-trend-up fa-2x text-warning mb-2"></i><h6>دعم منتظم</h6><div class="stats-number" id="dashReg">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-calendar-check fa-2x text-success mb-2"></i><h6>إجمالي الحضور</h6><div class="stats-number" id="totalPresent">0</div></div></div>
+      <div class="col-md-3 col-6"><div class="stats-card"><i class="fas fa-calendar-times fa-2x text-danger mb-2"></i><h6>إجمالي الغياب</h6><div class="stats-number" id="totalAbsent">0</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="fas fa-layer-group"></i> الفئات الست — أعداد الطلاب المصنَّفين</div>
+      <div class="card-body">
+        <div class="row g-3" id="categoryGrid"></div>
+        <div id="categoryDetail" class="mt-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== الحضور ==================== -->
+  <div id="view-attendance" class="view">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-clipboard-check"></i> كشف الحضور والغياب</div>
+      <div class="card-body">
+        <div class="row g-3 mb-4">
+          <div class="col-md-2 col-6"><label>📅 التاريخ</label><input type="text" id="datePicker" class="form-control" placeholder="اختر التاريخ"></div>
+          <div class="col-md-2 col-6">
+            <label>🎓 الصف</label>
+            <select id="classFilter" class="form-select">
+              <option value="">جميع الصفوف</option>
+              <option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option>
+              <option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option>
+              <option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option>
+            </select>
+          </div>
+          <div class="col-md-2 col-6"><label>🔍 عرض</label><button id="viewBtn" class="btn btn-primary w-100">عرض الكشف</button></div>
+          <div class="col-md-2 col-6"><label>💾 تهيئة</label><button id="initDayBtn" class="btn btn-success w-100">تهيئة اليوم</button></div>
+          <div class="col-md-2 col-6"><label>📎 رفع طلاب</label><button id="uploadBtn" class="btn btn-warning w-100">رفع Excel</button></div>
+          <div class="col-md-2 col-6"><label>📥 تصدير</label><button id="exportSheetBtn" class="btn btn-danger w-100">تصدير الكشف</button></div>
+        </div>
+
+        <!-- 🔽 شريط تغيير حالة الجميع -->
+        <div id="bulkStatusBar" class="bulk-bar" style="display:none">
+          <span class="bulk-title"><i class="fas fa-users-cog"></i> تغيير حالة الجميع:</span>
+          <button class="btn btn-success btn-sm" onclick="setAllStatus('present')"><i class="fas fa-check"></i> الكل حاضر</button>
+          <button class="btn btn-warning btn-sm" onclick="setAllStatus('late')"><i class="fas fa-clock"></i> الكل تأخر</button>
+          <button class="btn btn-danger btn-sm" onclick="setAllStatus('absent')"><i class="fas fa-times"></i> الكل غائب</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAllStatus('none')"><i class="fas fa-eraser"></i> مسح الحالات</button>
+          <span class="ms-auto text-muted small" id="bulkHint"></span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle">
+            <thead class="table-light"><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>الحالة (اختر من القائمة)</th><th>الملاحظات</th></tr></thead>
+            <tbody id="attendanceBody"><tr><td colspan="5" class="text-center text-muted">اختر تاريخ واضغط على "عرض الكشف"</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- ============ 📊 التقارير المتقدمة (أسبوعي / شهري / مخصص / عام) ============ -->
+        <hr class="my-4">
+        <h5 class="fw-bold mb-3" style="color:#2c3e66"><i class="fas fa-chart-bar"></i> تقارير الحضور المتقدمة</h5>
+
+        <div class="report-range-box">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label fw-bold">📅 من تاريخ</label>
+              <input type="text" id="reportFromDate" class="form-control" placeholder="اختر البداية">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">📅 إلى تاريخ</label>
+              <input type="text" id="reportToDate" class="form-control" placeholder="اختر النهاية">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">🎓 الصف</label>
+              <select id="reportClassFilter" class="form-select">
+                <option value="">جميع الصفوف</option>
+                <option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option>
+                <option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option>
+                <option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">⚡ اختيار سريع</label>
+              <select id="quickRange" class="form-select" onchange="applyQuickRange(this.value)">
+                <option value="">— اختر مدى —</option>
+                <option value="thisWeek">هذا الأسبوع</option>
+                <option value="lastWeek">الأسبوع الماضي</option>
+                <option value="thisMonth">هذا الشهر</option>
+                <option value="lastMonth">الشهر الماضي</option>
+                <option value="all">كل الفترات</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-3">
+            <div class="col-md-3 col-6">
+              <button class="btn btn-primary w-100 report-type-btn" onclick="generateAttendanceReport('week')">
+                <i class="fas fa-calendar-week"></i> تقرير أسبوعي
+              </button>
+            </div>
+            <div class="col-md-3 col-6">
+              <button class="btn btn-info w-100 report-type-btn" onclick="generateAttendanceReport('month')">
+                <i class="fas fa-calendar-days"></i> تقرير شهري
+              </button>
+            </div>
+            <div class="col-md-3 col-6">
+              <button class="btn btn-warning w-100 report-type-btn" onclick="generateAttendanceReport('custom')">
+                <i class="fas fa-sliders"></i> تقرير مخصص
+              </button>
+            </div>
+            <div class="col-md-3 col-6">
+              <button class="btn btn-success w-100 report-type-btn" onclick="generateAttendanceReport('all')">
+                <i class="fas fa-globe"></i> تقرير عام
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="reportPreview" class="mt-3"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== الطلاب ==================== -->
+  <div id="view-students" class="view">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-users"></i> إدارة الطلاب</div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded border shadow-sm flex-wrap gap-2">
+          <div><button id="addStudentBtn" class="btn btn-success btn-lg"><i class="fas fa-user-plus"></i> إضافة طالب جديد</button></div>
+          <div>
+            <button id="exportListBtn" class="btn btn-info me-2"><i class="fas fa-file-download"></i> تصدير القائمة</button>
+            <button id="deleteAllBtn" class="btn btn-danger btn-lg pulse-animation"><i class="fas fa-trash-alt"></i> حذف جميع الطلاب</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle">
+            <thead class="table-dark"><tr><th>#</th><th>اسم الطالب</th><th>الصف</th><th>الرقم المدرسي</th><th>مستوى الدعم</th><th>إجراءات</th></tr></thead>
+            <tbody id="studentsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== التصنيف والدعم ==================== -->
+  <div id="view-support" class="view">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-hands-holding-child"></i> نظام التصنيف التربوي وبناء برامج الدعم</div>
+      <div class="card-body">
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-md-5">
+            <label class="fw-bold">اختر الطالب</label>
+            <select id="supportStudentSelect" class="form-select"></select>
+          </div>
+          <div class="col-md-3"><button id="openStudentFileBtn" class="btn btn-primary w-100"><i class="fas fa-folder-open"></i> فتح ملف الدعم</button></div>
+        </div>
+        <div id="supportWorkspace"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== التقارير والبحث ==================== -->
+  <div id="view-reports" class="view">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-magnifying-glass"></i> البحث الذكي</div>
+      <div class="card-body">
+        <input type="text" id="smartSearch" class="form-control form-control-lg" placeholder="ابحث باسم الطالب، الصف، الفئة أ/ب/ج، أو مستوى الدعم (بسيط، منتظم، مكثف)...">
+        <div id="searchResults" class="mt-3"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><i class="fas fa-chart-column"></i> تقرير الفصل</div>
+      <div class="card-body">
+        <div class="row g-3 align-items-end mb-3">
+          <div class="col-md-4">
+            <label class="fw-bold">اختر الصف</label>
+            <select id="classReportSelect" class="form-select">
+              <option value="">جميع الصفوف</option>
+              <option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option>
+              <option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option>
+              <option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option>
+            </select>
+          </div>
+          <div class="col-md-3"><button id="buildClassReportBtn" class="btn btn-primary w-100">إنشاء تقرير الفصل</button></div>
+          <div class="col-md-3"><button id="exportClassReportBtn" class="btn btn-success w-100">📥 تصدير التقرير</button></div>
+        </div>
+        <div id="classReportBox"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
 </div>
 
-<!-- مودالات (نفس السابق) -->
+<!-- ==================== المودالات ==================== -->
 <div class="modal fade" id="excelModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning text-dark"><h5 class="modal-title">رفع ملف Excel</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><div class="alert alert-info py-2 small">يجب أن يحتوي الملف على عمود الاسم وعمود الصف.</div>
-    <div class="upload-area" id="uploadArea"><i class="fas fa-cloud-upload-alt fa-3x mb-2 text-success"></i><p class="mb-0">اضغط هنا أو اسحب ملف Excel</p><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none"></div>
-    <div id="excelPreview" style="max-height:300px; overflow:auto; margin-top:15px;"></div></div>
-    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="confirmExcelBtn" class="btn btn-primary" disabled>تأكيد الإضافة</button></div></div></div>
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header bg-warning text-dark"><h5 class="modal-title">رفع ملف Excel</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="alert alert-info py-2 small">يجب أن يحتوي الملف على عمود الاسم وعمود الصف.</div>
+      <div class="upload-area" id="uploadArea"><i class="fas fa-cloud-upload-alt fa-3x mb-2 text-success"></i><p class="mb-0">اضغط هنا أو اسحب ملف Excel</p><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none"></div>
+      <div id="excelPreview" style="max-height:300px;overflow:auto;margin-top:15px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="confirmExcelBtn" class="btn btn-primary" disabled>تأكيد الإضافة</button></div>
+  </div></div>
 </div>
+
 <div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-success text-white"><h5 class="modal-title">إضافة/تعديل طالب</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><input type="hidden" id="studentId"><div class="mb-3"><label class="form-label">الاسم</label><input type="text" id="studentNameInput" class="form-control"></div>
-    <div class="mb-3"><label class="form-label">الصف</label><select id="studentClassInput" class="form-select"><option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option><option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option><option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option></select></div></div>
-    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveStudentBtn" class="btn btn-primary">حفظ</button></div></div></div>
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header bg-success text-white"><h5 class="modal-title">إضافة / تعديل طالب</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="studentId">
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">اسم الطالب *</label><input type="text" id="studentNameInput" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">الرقم المدرسي</label><input type="text" id="studentSchoolIdInput" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">الصف / الفصل</label>
+          <select id="studentClassInput" class="form-select">
+            <option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option>
+            <option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option>
+            <option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option>
+          </select>
+        </div>
+        <div class="col-md-6"><label class="form-label">تاريخ الميلاد</label><input type="text" id="studentBirthInput" class="form-control" placeholder="اختياري"></div>
+        <div class="col-md-6"><label class="form-label">اسم المعلم</label><input type="text" id="studentTeacherInput" class="form-control" value="محمد رضا"></div>
+        <div class="col-md-6"><label class="form-label">تاريخ بدء المتابعة</label><input type="text" id="studentStartInput" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">نوع المتابعة</label>
+          <select id="studentFollowInput" class="form-select">
+            <option value="متابعة عامة">متابعة عامة</option>
+            <option value="متابعة أكاديمية">متابعة أكاديمية</option>
+            <option value="متابعة مهارية">متابعة مهارية</option>
+          </select>
+        </div>
+        <div class="col-12"><label class="form-label">ملاحظات عامة</label><textarea id="studentNotesInput" class="form-control" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveStudentBtn" class="btn btn-primary">حفظ الطالب</button></div>
+  </div></div>
 </div>
+
 <div class="modal fade" id="noteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-info text-white"><h5 class="modal-title">ملاحظات الطالب</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><input type="hidden" id="noteStudentId"><input type="hidden" id="noteDate"><textarea id="noteTextInput" class="form-control" rows="4" placeholder="أدخل الملاحظة هنا..."></textarea></div>
-    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary">حفظ</button></div></div></div>
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header bg-info text-white"><h5 class="modal-title">ملاحظات الطالب</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="noteStudentId"><input type="hidden" id="noteDate">
+      <textarea id="noteTextInput" class="form-control" rows="4" placeholder="أدخل الملاحظة هنا..."></textarea>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary">حفظ</button></div>
+  </div></div>
 </div>
-<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-info text-white"><h5 class="modal-title">التقرير العام الذكي - المعلم: محمد رضا</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><div class="row"><div class="col-md-4 border-end"><h6 class="fw-bold mb-3">1. اختيار الصف</h6><select id="reportClass" class="form-select mb-4"><option value="">جميع الصفوف</option><option value="رابع ب">رابع ب</option><option value="رابع د">رابع د</option><option value="خامس ب">خامس ب</option><option value="خامس د">خامس د</option><option value="سادس ب">سادس ب</option><option value="سادس د">سادس د</option></select><h6 class="fw-bold mb-2">2. أيام الدعم الفعلية</h6><p class="small text-muted">اختر الأيام التي تم فيها الدعم الفعلي (سيتم احتساب النسبة عليها فقط)</p><div id="reportDaysList" style="max-height: 300px; overflow-y: auto;"></div><button id="refreshReportBtn" class="btn btn-primary w-100 mt-3">تحديث الجدول والنسب</button></div>
-    <div class="col-md-8"><div id="reportTable" class="table-responsive"></div></div></div></div>
-    <div class="modal-footer"><button id="exportReportBtn" class="btn btn-success">📥 تصدير التقرير (Excel)</button><button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button></div></div></div>
+
+<div class="modal fade" id="sessionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header bg-primary text-white"><h5 class="modal-title">جلسة دعم الطالب</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">التاريخ</label><input type="text" id="sessionDate" class="form-control"></div>
+        <div class="col-md-8"><label class="form-label">الهدف اليومي</label><input type="text" id="sessionGoal" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">النشاط الأول</label><input type="text" id="sessionAct1" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">النشاط الثاني</label><input type="text" id="sessionAct2" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">النشاط الثالث</label><input type="text" id="sessionAct3" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">النشاط الرابع</label><input type="text" id="sessionAct4" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">النتيجة (مثال: 8 من 10)</label><input type="text" id="sessionResult" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">نسبة الإنجاز %</label><input type="number" id="sessionPercent" class="form-control" min="0" max="100" value="70"></div>
+        <div class="col-md-6"><label class="form-label">المهارة التي تحسنت</label><input type="text" id="sessionImproved" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">المهارة التي تحتاج دعمًا</label><input type="text" id="sessionNeed" class="form-control"></div>
+        <div class="col-12"><label class="form-label">ملاحظات الجلسة</label><textarea id="sessionNotes" class="form-control" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveSessionBtn" class="btn btn-primary">حفظ الجلسة</button></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="evidenceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header bg-dark text-white"><h5 class="modal-title">إضافة دليل / ملاحظة موثقة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">التاريخ</label><input type="text" id="evDate" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">المادة</label><input type="text" id="evSubject" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">الموقف</label><input type="text" id="evSituation" class="form-control" placeholder="قراءة فردية"></div>
+        <div class="col-md-6"><label class="form-label">المهارة</label><input type="text" id="evSkill" class="form-control"></div>
+        <div class="col-12"><label class="form-label">وصف ما حدث</label><textarea id="evDesc" class="form-control" rows="2"></textarea></div>
+        <div class="col-12"><label class="form-label">نتيجة الطالب</label><input type="text" id="evResult" class="form-control" placeholder="أخطأ في 7 كلمات من 15"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button id="saveEvidenceBtn" class="btn btn-primary">حفظ الدليل</button></div>
+  </div></div>
 </div>
 
 <script>
-// =============================================================
-// 1. تهيئة Firebase باستخدام الكائن الصحيح
-// =============================================================
+/* =============================================================
+   1. Firebase
+   ============================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDCdCmictU7HiRWpHBg_LVd3yPweElw68U",
   authDomain: "abse-909ed.firebaseapp.com",
@@ -235,726 +467,1893 @@ const firebaseConfig = {
   appId: "1:641196021688:web:4a3c5131fc4f97f889214d",
   measurementId: "G-KTXKM5W7GY"
 };
-
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const database = firebase.database();
 
-// =============================================================
-// 2. التحكم في المصادقة (تسجيل الدخول)
-// =============================================================
+/* =============================================================
+   2. المصادقة
+   ============================================================= */
 let currentUser = null;
 
 auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("appContent").style.display = "block";
-        document.getElementById("userEmail").textContent = `👤 ${user.email}`;
-        loadData();
-    } else {
-        currentUser = null;
-        document.getElementById("loginScreen").style.display = "flex";
-        document.getElementById("appContent").style.display = "none";
-        document.getElementById("loginError").style.display = "none";
-        document.getElementById("loginSuccess").style.display = "none";
-        document.getElementById("loginLoading").style.display = "none";
-        document.getElementById("loginBtn").disabled = false;
-        document.getElementById("loginBtn").innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
-    }
+  if (user) {
+    currentUser = user;
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appContent").style.display = "block";
+    document.getElementById("userEmail").textContent = `👤 ${user.email}`;
+    loadData();
+  } else {
+    currentUser = null;
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("appContent").style.display = "none";
+    ["loginError","loginSuccess","loginLoading"].forEach(id => document.getElementById(id).style.display = "none");
+    const b = document.getElementById("loginBtn");
+    b.disabled = false;
+    b.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
+  }
 });
 
-document.getElementById("loginForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value.trim();
-    const errorDiv = document.getElementById("loginError");
-    const successDiv = document.getElementById("loginSuccess");
-    const loadingDiv = document.getElementById("loginLoading");
-    const loginBtn = document.getElementById("loginBtn");
+document.getElementById("loginForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  const errorDiv = document.getElementById("loginError");
+  const successDiv = document.getElementById("loginSuccess");
+  const loadingDiv = document.getElementById("loginLoading");
+  const loginBtn = document.getElementById("loginBtn");
+  errorDiv.style.display = "none"; successDiv.style.display = "none";
 
-    errorDiv.style.display = "none";
-    successDiv.style.display = "none";
+  if (!email || !password) { errorDiv.textContent = "⚠️ الرجاء ملء جميع الحقول"; errorDiv.style.display = "block"; return; }
 
-    if (!email || !password) {
-        errorDiv.textContent = "⚠️ الرجاء ملء جميع الحقول";
-        errorDiv.style.display = "block";
-        return;
-    }
+  loadingDiv.style.display = "block";
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> جاري...';
 
-    loadingDiv.style.display = "block";
-    loginBtn.disabled = true;
-    loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> جاري...';
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-            loadingDiv.style.display = "none";
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
-            successDiv.textContent = "✅ تم تسجيل الدخول بنجاح، جاري تحميل البيانات...";
-            successDiv.style.display = "block";
-        })
-        .catch((error) => {
-            loadingDiv.style.display = "none";
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
-
-            let msg = "";
-            switch (error.code) {
-                case 'auth/user-not-found': msg = "❌ هذا البريد غير مسجل في النظام"; break;
-                case 'auth/wrong-password': msg = "❌ كلمة المرور غير صحيحة"; break;
-                case 'auth/invalid-email': msg = "❌ صيغة البريد غير صحيحة"; break;
-                case 'auth/too-many-requests': msg = "⚠️ تم تعطيل الحساب مؤقتاً، انتظر دقائق"; break;
-                case 'auth/network-request-failed': msg = "⚠️ فشل الاتصال بالإنترنت"; break;
-                default: msg = "❌ " + error.message;
-            }
-            errorDiv.textContent = msg;
-            errorDiv.style.display = "block";
-            console.error("خطأ في تسجيل الدخول:", error.code, error.message);
-        });
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      loadingDiv.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
+      successDiv.textContent = "✅ تم تسجيل الدخول بنجاح، جاري تحميل البيانات...";
+      successDiv.style.display = "block";
+    })
+    .catch(error => {
+      loadingDiv.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
+      let msg = "";
+      switch (error.code) {
+        case 'auth/user-not-found': msg = "❌ هذا البريد غير مسجل في النظام"; break;
+        case 'auth/wrong-password': msg = "❌ كلمة المرور غير صحيحة"; break;
+        case 'auth/invalid-email': msg = "❌ صيغة البريد غير صحيحة"; break;
+        case 'auth/too-many-requests': msg = "⚠️ تم تعطيل الحساب مؤقتاً، انتظر دقائق"; break;
+        case 'auth/network-request-failed': msg = "⚠️ فشل الاتصال بالإنترنت"; break;
+        default: msg = "❌ " + error.message;
+      }
+      errorDiv.textContent = msg; errorDiv.style.display = "block";
+    });
 });
 
-function logout() {
-    if (confirm("هل أنت متأكد من تسجيل الخروج؟")) {
-        auth.signOut();
+function logout(){ if (confirm("هل أنت متأكد من تسجيل الخروج؟")) auth.signOut(); }
+
+/* =============================================================
+   3. بنك الفئات والمؤشرات والبرامج
+   ============================================================= */
+const LEVEL_WEIGHTS = { "نادرًا":1, "أحيانًا":2, "متكرر":3, "شديد":4 };
+
+const CATEGORIES = {
+  A: {
+    key:'A', name:'الفئة أ — صعوبات التعلم', short:'صعوبات التعلم', icon:'fa-book-reader',
+    indicators:[
+      {id:'A1', text:'تغيير أو عكس الحروف أو الأرقام بعد العمر المتوقع'},
+      {id:'A2', text:'صعوبة فك رموز النصوص المناسبة للمستوى الدراسي'},
+      {id:'A3', text:'صعوبة كبيرة في فهم المفاهيم أو الرموز الرياضية الأساسية'},
+      {id:'A4', text:'الكتابة غير واضحة رغم بذل الجهد'},
+      {id:'A5', text:'استجابات شفهية جيدة مقابل ضعف واضح في الأداء الكتابي'}
+    ],
+    program:{
+      title:'برنامج دعم القراءة والكتابة والمهارات الأكاديمية',
+      generalGoal:'رفع مستوى الطالب في القراءة والكتابة من مستواه الحالي إلى المستوى المستهدف.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'تمييز الحروف والأصوات والكلمات الأساسية.',
+         activities:['بطاقات الحروف','التمييز بين الحروف المتشابهة','الربط بين الحرف والصوت','قراءة كلمات قصيرة','قراءة فردية'], measure:'10 كلمات'},
+        {title:'الأسبوع الثاني', goal:'رفع دقة قراءة الكلمات والجمل.',
+         activities:['كلمات متدرجة','جمل قصيرة','قراءة موجهة','تكرار القراءة','إملاء الكلمات المستهدفة'], measure:'10 جمل قصيرة'},
+        {title:'الأسبوع الثالث', goal:'قراءة جمل وفقرات قصيرة.',
+         activities:['قراءة نص قصير','استخراج الكلمات الصعبة','أسئلة فهم','إعادة القراءة','تدريبات الطلاقة'], measure:'نص قصير + 5 أسئلة فهم'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن.',
+         activities:['يقرأ الطالب نصًا جديدًا','مقارنة الاختبار القبلي بالبعدي','حساب نسبة التحسن','توصية بالمتابعة'], measure:'اختبار بعدي'}
+      ]
     }
+  },
+  B: {
+    key:'B', name:'الفئة ب — الانتباه والوظائف التنفيذية', short:'الانتباه والتنظيم', icon:'fa-brain',
+    indicators:[
+      {id:'B1', text:'التشتت المستمر'},
+      {id:'B2', text:'صعوبة إكمال التعليمات متعددة الخطوات'},
+      {id:'B3', text:'عدم التنظيم المزمن'},
+      {id:'B4', text:'المقاطعة والتحدث بشكل متهور'},
+      {id:'B5', text:'الحركة المفرطة أو صعوبة البقاء جالسًا'}
+    ],
+    program:{
+      title:'برنامج الانتباه والتنظيم وتنفيذ التعليمات',
+      generalGoal:'تحسين مدة الانتباه والقدرة على تنظيم المهام وتنفيذ التعليمات متعددة الخطوات.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'تعليمات قصيرة وواضحة ومهمة واحدة.',
+         activities:['تعليمة من خطوة واحدة','مؤقت بصري دقيقتان','تعزيز فوري','مهمة قصيرة منجزة'], measure:'عدد المهام المنجزة في 5 دقائق'},
+        {title:'الأسبوع الثاني', goal:'تقسيم المهام إلى خطوات.',
+         activities:['بطاقة مهام مصورة','تعليمات من خطوتين','مؤقت بصري 4 دقائق','متابعة التنظيم'], measure:'تنفيذ 3 مهام متتابعة'},
+        {title:'الأسبوع الثالث', goal:'زيادة مدة التركيز.',
+         activities:['تعليمات من 3 خطوات','مؤقت بصري 6 دقائق','تنظيم الحقيبة والدفتر','تعزيز متدرج'], measure:'العمل المتواصل 6 دقائق'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن.',
+         activities:['مهمة مركبة','قياس زمن الانتباه','مقارنة قبل/بعد','توصية'], measure:'اختبار بعدي'}
+      ]
+    }
+  },
+  C: {
+    key:'C', name:'الفئة ج — الكلام والتواصل', short:'الكلام والتواصل', icon:'fa-comments',
+    indicators:[
+      {id:'C1', text:'التلعثم أو صعوبة نطق بعض الأصوات'},
+      {id:'C2', text:'صعوبة التعبير عن الأفكار المترابطة شفهيًا'},
+      {id:'C3', text:'مفردات محدودة مقارنة بالأقران'},
+      {id:'C4', text:'صعوبة فهم اللغة المجازية أو التعليمات'}
+    ],
+    program:{
+      title:'برنامج الكلام والتواصل وتنمية المفردات',
+      generalGoal:'تحسين النطق والتعبير الشفهي وتنمية الحصيلة اللغوية.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'تدريبات النطق للأصوات المستهدفة.',
+         activities:['تمارين فم ولسان','تكرار الأصوات','بطاقات صور للنطق','تسجيل صوتي ذاتي'], measure:'10 كلمات صوتية'},
+        {title:'الأسبوع الثاني', goal:'التحدث بجمل قصيرة.',
+         activities:['تكوين جملة من صورتين','وصف صورة','إكمال جملة ناقصة','حوار قصير'], measure:'8 جمل سليمة'},
+        {title:'الأسبوع الثالث', goal:'تنظيم الأفكار وتنمية المفردات.',
+         activities:['سرد قصة مصورة','ترتيب أحداث','بنك كلمات جديد','أسئلة وأجوبة'], measure:'سرد 5 أحداث متتابعة'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن.',
+         activities:['حوار موجّه','تقييم الطلاقة','مقارنة قبل/بعد'], measure:'اختبار بعدي'}
+      ]
+    }
+  },
+  D: {
+    key:'D', name:'الفئة د — الاجتماعية والعاطفية والسلوكية', short:'الاجتماعية والسلوكية', icon:'fa-face-smile',
+    indicators:[
+      {id:'D1', text:'الانطواء الشديد أو الانفجارات العاطفية'},
+      {id:'D2', text:'صعوبة الحفاظ على العلاقات مع الأقران'},
+      {id:'D3', text:'الالتزام الصارم بالروتين أو الضيق الشديد عند حدوث تغيير'},
+      {id:'D4', text:'التركيز المفرط على موضوعات محددة'},
+      {id:'D5', text:'تجنب التواصل البصري'}
+    ],
+    program:{
+      title:'برنامج المهارات الاجتماعية والسلوكية',
+      generalGoal:'تحسين التفاعل الاجتماعي والتعبير عن المشاعر والتكيف مع التغيير.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'روتين واضح وتنبيه مسبق.',
+         activities:['جدول يومي مصور','تنبيه قبل التغيير بـ 5 دقائق','تعزيز السلوك المناسب'], measure:'عدد مرات الالتزام بالروتين'},
+        {title:'الأسبوع الثاني', goal:'أنشطة تعاون ثنائي.',
+         activities:['نشاط زوجي','تبادل الأدوار','تدريب التعبير عن المشاعر ببطاقات'], measure:'إتمام نشاط ثنائي'},
+        {title:'الأسبوع الثالث', goal:'التفاعل الجماعي.',
+         activities:['لعبة جماعية','مهمة مشتركة','حل خلاف بسيط'], measure:'المشاركة في نشاط جماعي'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن.',
+         activities:['ملاحظة التفاعل','تقييم ذاتي','مقارنة قبل/بعد'], measure:'اختبار بعدي'}
+      ]
+    }
+  },
+  E: {
+    key:'E', name:'الفئة هـ — المعالجة البصرية/السمعية', short:'المعالجة البصرية/السمعية', icon:'fa-eye',
+    indicators:[
+      {id:'E1', text:'تضييق العينين أو تقريب الأوراق كثيرًا'},
+      {id:'E2', text:'طلب تكرار التعليمات الشفهية باستمرار'},
+      {id:'E3', text:'سوء تفسير التعليمات السمعية رغم سلامة اختبار السمع'},
+      {id:'E4', text:'إجهاد بصري'}
+    ],
+    program:{
+      title:'برنامج دعم المعالجة البصرية والسمعية',
+      generalGoal:'تحسين استقبال ومعالجة المعلومات البصرية والسمعية داخل الصف.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'تقليل المشتتات وتقديم تعليمات مزدوجة.',
+         activities:['مقعد أمامي','تعليمات شفهية + مكتوبة','مواد واضحة الخط'], measure:'متابعة التعليمات'},
+        {title:'الأسبوع الثاني', goal:'التكرار والتأكد من الفهم.',
+         activities:['إعادة صياغة التعليمة','سؤال الطالب ليعيد الشرح','تكرار عند الحاجة'], measure:'إعادة شرح 3 تعليمات'},
+        {title:'الأسبوع الثالث', goal:'تدريبات معالجة بصرية/سمعية.',
+         activities:['تمييز أشكال','تمييز أصوات','إكمال ناقص بصريًا','تسلسل سمعي'], measure:'10 مفردات'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن + توصية بالفحص.',
+         activities:['مقارنة قبل/بعد','توصية بفحص بصري/سمعي عند استمرار المؤشرات'], measure:'اختبار بعدي'}
+      ]
+    }
+  },
+  F: {
+    key:'F', name:'الفئة و — التنسيق الحركي والجسدي', short:'التنسيق الحركي', icon:'fa-person-running',
+    indicators:[
+      {id:'F1', text:'التعثر أو ضعف الحركة بشكل متكرر'},
+      {id:'F2', text:'صعوبة شديدة في استخدام المقص أو المسطرة'},
+      {id:'F3', text:'صعوبة في الإمساك بالقلم'},
+      {id:'F4', text:'ضعف الوعي المكاني'}
+    ],
+    program:{
+      title:'برنامج دعم التنسيق الحركي',
+      generalGoal:'تحسين المهارات الحركية الدقيقة والكبيرة والتآزر البصري الحركي.',
+      weeks:[
+        {title:'الأسبوع الأول', goal:'التآزر البصري الحركي.',
+         activities:['تتبع نقاط','رسم على خطوط','تجميع مكعبات'], measure:'إتمام 3 أنشطة تتبع'},
+        {title:'الأسبوع الثاني', goal:'القص والرسم.',
+         activities:['قص على خط مستقيم','قص أشكال بسيطة','رسم حر'], measure:'قص شكل كامل'},
+        {title:'الأسبوع الثالث', goal:'التحكم بالقلم والحركة والتوازن.',
+         activities:['تمارين مسك القلم','خطوط متعرجة','تمارين توازن','حركة منظمة'], measure:'كتابة سطر منظم'},
+        {title:'الأسبوع الرابع', goal:'قياس التحسن.',
+         activities:['مهمة حركية مركبة','مقارنة قبل/بعد','تقليل متطلبات الكتابة الطويلة عند الحاجة'], measure:'اختبار بعدي'}
+      ]
+    }
+  }
+};
+
+const LEVELS = {
+  normal:   { label:'متابعة عادية',        cls:'lv-green',  min:0,  max:14 },
+  simple:   { label:'يحتاج دعمًا بسيطًا',   cls:'lv-yellow', min:15, max:34 },
+  regular:  { label:'يحتاج دعمًا منتظمًا',  cls:'lv-orange', min:35, max:59 },
+  intensive:{ label:'يحتاج دعمًا مكثفًا',   cls:'lv-red',    min:60, max:100 }
+};
+function levelFromScore(s){
+  if (s >= 60) return 'intensive';
+  if (s >= 35) return 'regular';
+  if (s >= 15) return 'simple';
+  return 'normal';
 }
 
-// =============================================================
-// 3. المتغيرات العامة
-// =============================================================
-let students = [];
-let attendance = [];
-let nextId = 1;
-let nextAttId = 1;
-let currentDate = "";
-let currentClass = "";
-let tempStudents = [];
-let reportActiveDays = [];
+/* =============================================================
+   4. الحالة العامة
+   ============================================================= */
+let students = [], attendance = [], assessments = [], programs = [], sessions = [], evidences = [], referrals = [];
+let nextId=1, nextAttId=1, nextAssessId=1, nextProgramId=1, nextSessionId=1, nextEvId=1, nextRefId=1;
+let currentDate = "", currentClass = "", tempStudents = [], reportActiveDays = [];
+let activeStudentId = null;
 const TEACHER_NAME = "محمد رضا";
 
-// =============================================================
-// 4. دوال التحميل والحفظ (Realtime Database)
-// =============================================================
+/* =============================================================
+   5. التحميل والحفظ
+   ============================================================= */
+async function loadData(){
+  try{
+    const snap = await database.ref().once('value');
+    const d = snap.val() || {};
+    students    = d.students   ? Object.values(d.students)   : [];
+    attendance  = d.attendance ? Object.values(d.attendance) : [];
+    assessments = d.assessments? Object.values(d.assessments): [];
+    programs    = d.programs   ? Object.values(d.programs)   : [];
+    sessions    = d.sessions   ? Object.values(d.sessions)   : [];
+    evidences   = d.evidences  ? Object.values(d.evidences)  : [];
+    referrals   = d.referrals  ? Object.values(d.referrals)  : [];
 
-async function loadData() {
-    try {
-        // جلب الطلاب
-        const studentsSnapshot = await database.ref('students').once('value');
-        const studentsData = studentsSnapshot.val();
-
-        // جلب سجلات الحضور
-        const attendanceSnapshot = await database.ref('attendance').once('value');
-        const attendanceData = attendanceSnapshot.val();
-
-        if (studentsData) {
-            students = Object.values(studentsData);
-            // التأكد من وجود id
-            students = students.map(s => ({ ...s, id: s.id || 0 }));
-            students.sort((a, b) => a.name.localeCompare(b.name));
-        } else {
-            students = [
-                {id:1, name:"أحمد علي", class:"رابع ب"},
-                {id:2, name:"فاطمة حسن", class:"رابع د"},
-                {id:3, name:"محمود خالد", class:"خامس ب"},
-                {id:4, name:"ليلى أحمد", class:"خامس د"},
-                {id:5, name:"سارة محمود", class:"سادس ب"},
-                {id:6, name:"عمر إبراهيم", class:"سادس د"}
-            ];
-        }
-
-        if (attendanceData) {
-            attendance = Object.values(attendanceData);
-            attendance = attendance.map(a => ({ ...a, id: a.id || 0 }));
-        } else {
-            attendance = [];
-        }
-
-        // تحديث المعرفات
-        if (students.length > 0) nextId = Math.max(...students.map(s => s.id)) + 1;
-        else nextId = 1;
-        if (attendance.length > 0) nextAttId = Math.max(...attendance.map(a => a.id)) + 1;
-        else nextAttId = 1;
-
-        // حفظ في localStorage كنسخة احتياطية
-        localStorage.setItem("myStudents", JSON.stringify(students));
-        localStorage.setItem("myAttendance", JSON.stringify(attendance));
-
-        updateStats();
-        renderStudentsTable();
-        renderAttendance();
-    } catch (error) {
-        console.error("خطأ في تحميل البيانات:", error);
-        // محاولة من localStorage
-        try {
-            const savedStudents = localStorage.getItem("myStudents");
-            const savedAttendance = localStorage.getItem("myAttendance");
-            if (savedStudents) students = JSON.parse(savedStudents);
-            if (savedAttendance) attendance = JSON.parse(savedAttendance);
-            if (students.length === 0) {
-                students = [
-                    {id:1, name:"أحمد علي", class:"رابع ب"},
-                    {id:2, name:"فاطمة حسن", class:"رابع د"},
-                    {id:3, name:"محمود خالد", class:"خامس ب"},
-                    {id:4, name:"ليلى أحمد", class:"خامس د"},
-                    {id:5, name:"سارة محمود", class:"سادس ب"},
-                    {id:6, name:"عمر إبراهيم", class:"سادس د"}
-                ];
-            }
-            updateStats();
-            renderStudentsTable();
-            renderAttendance();
-        } catch (e) {
-            console.error("فشل تحميل localStorage أيضاً", e);
-        }
+    if (students.length === 0){
+      students = [
+        {id:1,name:"أحمد علي",class:"رابع ب"},{id:2,name:"فاطمة حسن",class:"رابع د"},
+        {id:3,name:"محمود خالد",class:"خامس ب"},{id:4,name:"ليلى أحمد",class:"خامس د"},
+        {id:5,name:"سارة محمود",class:"سادس ب"},{id:6,name:"عمر إبراهيم",class:"سادس د"}
+      ];
     }
+    students.forEach(s => { if(!s.id) s.id = 0; });
+    students.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+    recomputeIds();
+    backupLocal();
+    refreshAll();
+  }catch(err){
+    console.error("خطأ في تحميل البيانات:", err);
+    const ls = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e){ return []; } };
+    students    = ls("myStudents");
+    attendance  = ls("myAttendance");
+    assessments = ls("myAssessments");
+    programs    = ls("myPrograms");
+    sessions    = ls("mySessions");
+    evidences   = ls("myEvidences");
+    if (students.length === 0){
+      students = [
+        {id:1,name:"أحمد علي",class:"رابع ب"},{id:2,name:"فاطمة حسن",class:"رابع د"},
+        {id:3,name:"محمود خالد",class:"خامس ب"},{id:4,name:"ليلى أحمد",class:"خامس د"},
+        {id:5,name:"سارة محمود",class:"سادس ب"},{id:6,name:"عمر إبراهيم",class:"سادس د"}
+      ];
+    }
+    recomputeIds();
+    refreshAll();
+  }
 }
 
-async function saveData() {
-    // حفظ في localStorage
-    localStorage.setItem("myStudents", JSON.stringify(students));
-    localStorage.setItem("myAttendance", JSON.stringify(attendance));
-    updateStats();
-
-    if (!currentUser) {
-        alert("⚠️ يجب تسجيل الدخول للحفظ في السحابة!");
-        return;
-    }
-
-    try {
-        // حفظ في Realtime Database
-        await database.ref('students').set(students);
-        await database.ref('attendance').set(attendance);
-        console.log("✅ تم حفظ البيانات في السحابة (Realtime Database)");
-    } catch (error) {
-        console.error("❌ فشل الحفظ في السحابة:", error);
-        alert("⚠️ فشل الحفظ في السحابة: " + error.message);
-    }
+function recomputeIds(){
+  nextId       = students.length    ? Math.max(...students.map(s=>s.id||0)) + 1 : 1;
+  nextAttId    = attendance.length  ? Math.max(...attendance.map(a=>a.id||0)) + 1 : 1;
+  nextAssessId = assessments.length ? Math.max(...assessments.map(a=>a.id||0)) + 1 : 1;
+  nextProgramId= programs.length    ? Math.max(...programs.map(p=>p.id||0)) + 1 : 1;
+  nextSessionId= sessions.length    ? Math.max(...sessions.map(s=>s.id||0)) + 1 : 1;
+  nextEvId     = evidences.length   ? Math.max(...evidences.map(e=>e.id||0)) + 1 : 1;
+  nextRefId    = referrals.length   ? Math.max(...referrals.map(r=>r.id||0)) + 1 : 1;
 }
 
-// =============================================================
-// 5. دوال العرض (نفس الكود السابق)
-// =============================================================
+function backupLocal(){
+  localStorage.setItem("myStudents", JSON.stringify(students));
+  localStorage.setItem("myAttendance", JSON.stringify(attendance));
+  localStorage.setItem("myAssessments", JSON.stringify(assessments));
+  localStorage.setItem("myPrograms", JSON.stringify(programs));
+  localStorage.setItem("mySessions", JSON.stringify(sessions));
+  localStorage.setItem("myEvidences", JSON.stringify(evidences));
+}
 
-function renderStudentsTable() {
-    const tbody = document.getElementById("studentsBody");
-    if (!tbody) return;
-    if (students.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='4' class='text-center text-muted'>لا يوجد طلاب حالياً</td></tr>";
-        return;
-    }
-    let html = "";
-    students.forEach((s, idx) => {
-        const actions = currentUser ? `
-            <button class="btn btn-sm btn-outline-warning" onclick="editStudent(${s.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-outline-danger me-1" onclick="deleteStudent(${s.id})"><i class="fas fa-trash"></i></button>
-        ` : `<span class="text-muted"><i class="fas fa-eye"></i> عرض فقط</span>`;
-        html += `<tr>
-                    <td>${idx + 1}</td>
-                    <td>${s.name}</td>
-                    <td><span class="class-badge">${s.class}</span></td>
-                    <td>${actions}</td>
-                </tr>`;
+async function saveData(){
+  backupLocal();
+  updateStats();
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول للحفظ في السحابة!"); return; }
+  try{
+    await database.ref('students').set(students);
+    await database.ref('attendance').set(attendance);
+    await database.ref('assessments').set(assessments);
+    await database.ref('programs').set(programs);
+    await database.ref('sessions').set(sessions);
+    await database.ref('evidences').set(evidences);
+    await database.ref('referrals').set(referrals);
+  }catch(err){
+    console.error("فشل الحفظ في السحابة:", err);
+    alert("⚠️ فشل الحفظ في السحابة: " + err.message);
+  }
+}
+
+function refreshAll(){
+  updateStats();
+  renderDashboard();
+  renderStudentsTable();
+  renderAttendance();
+  fillSupportSelect();
+  renderClassReport();
+  runSmartSearch();
+}
+
+/* =============================================================
+   6. محرك التحليل الذكي
+   ============================================================= */
+function analyzeIndicators(indicators, results){
+  const scores = {};
+  let hasAny = false;
+  for (const k in CATEGORIES){
+    const cat = CATEGORIES[k];
+    let sum = 0, max = cat.indicators.length * 4;
+    cat.indicators.forEach(ind => {
+      const v = indicators[ind.id] || 0;
+      if (v > 0) hasAny = true;
+      sum += v;
     });
-    tbody.innerHTML = html;
+    scores[k] = max ? Math.round((sum / max) * 100) : 0;
+  }
+
+  if (results){
+    const ra = parseFloat(results.readAccuracy), wr = parseFloat(results.writing),
+          co = parseFloat(results.comprehension);
+    let bonusA = 0;
+    if (!isNaN(ra) && ra < 70) bonusA += (70 - ra) / 2;
+    if (!isNaN(wr) && wr < 70) bonusA += (70 - wr) / 2;
+    if (bonusA > 0) scores.A = Math.min(100, Math.round(scores.A + bonusA));
+    if (!isNaN(co) && co < 70) scores.C = Math.min(100, Math.round(scores.C + (70 - co) / 3));
+  }
+
+  const sorted = Object.keys(scores).sort((a,b)=> scores[b]-scores[a]);
+  const primary = hasAny ? sorted[0] : null;
+  const primaryScore = primary ? scores[primary] : 0;
+  const secondary = hasAny ? sorted.slice(1).filter(k => scores[k] >= Math.max(15, primaryScore * 0.45)) : [];
+  const level = levelFromScore(primaryScore);
+
+  return { scores, sorted, primary, primaryScore, secondary, level, hasAny };
 }
 
-function renderAttendance() {
-    const tbody = document.getElementById("attendanceBody");
-    if (!currentDate) {
-        tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>📌 اختر تاريخ واضغط على 'عرض الكشف'</td></tr>";
-        return;
+function getLatestAssessment(studentId){
+  const list = assessments.filter(a => a.studentId === studentId).sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  return list.length ? list[list.length-1] : null;
+}
+
+function getStudentClassification(studentId){
+  const a = getLatestAssessment(studentId);
+  if (!a || !a.analysis || !a.analysis.primary) return null;
+  return a.analysis;
+}
+
+/* =============================================================
+   7. لوحة التحكم
+   ============================================================= */
+function renderDashboard(){
+  const total = students.length;
+  let need = 0, normal = 0, simple = 0, regular = 0, intensive = 0;
+  const catCounts = {A:0,B:0,C:0,D:0,E:0,F:0};
+
+  students.forEach(s => {
+    const c = getStudentClassification(s.id);
+    if (!c){ normal++; return; }
+    if (c.primary) catCounts[c.primary] = (catCounts[c.primary]||0) + 1;
+    switch(c.level){
+      case 'normal': normal++; break;
+      case 'simple': simple++; need++; break;
+      case 'regular': regular++; need++; break;
+      case 'intensive': intensive++; need++; break;
     }
-    let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
-    if (filtered.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>لا يوجد طلاب في هذا الصف</td></tr>";
-        return;
-    }
-    let html = "";
-    filtered.forEach((student, idx) => {
-        let record = attendance.find(a => a.date === currentDate && a.studentId === student.id);
-        let status = record ? record.status : "none";
-        let notes = record ? (record.notes || "") : "";
-        let statusClass = "", statusText = "", icon = "";
-        if (status === "present") { statusClass = "status-present"; statusText = "حاضر"; icon = "✅"; }
-        else if (status === "late") { statusClass = "status-late"; statusText = "تأخر"; icon = "⏰"; }
-        else if (status === "absent") { statusClass = "status-absent"; statusText = "غائب"; icon = "❌"; }
-        else { statusClass = "status-none"; statusText = "غير مسجل"; icon = "⚪"; }
+  });
 
-        const canEdit = currentUser !== null;
-        const statusClick = canEdit ? `onclick="changeStatus(${student.id})"` : '';
-        const noteBtn = canEdit ? `
-            <button class="btn btn-sm btn-light border" onclick="openNote(${student.id}, '${currentDate}', '${notes.replace(/'/g, "\\'")}')">
-                <i class="fas fa-pen text-primary"></i>
-            </button>
-        ` : '';
+  document.getElementById('dashTotal').textContent = total;
+  document.getElementById('dashNeed').textContent = need;
+  document.getElementById('dashNormal').textContent = normal;
+  document.getElementById('dashIntensive').textContent = intensive;
+  document.getElementById('dashSimple').textContent = simple;
+  document.getElementById('dashReg').textContent = regular;
 
-        html += `<tr>
-                    <td>${idx + 1}</td>
-                    <td><strong>${student.name}</strong></td>
-                    <td><span class="class-badge">${student.class}</span></td>
-                    <td class="text-center">
-                        <span class="badge p-2 ${statusClass}" ${statusClick} title="${canEdit ? 'اضغط للتغيير' : 'عرض فقط'}">
-                            ${icon} ${statusText}
-                        </span>
-                        ${!canEdit ? '<br><small class="text-muted">🔒 للقراءة فقط</small>' : ''}
-                    </td>
-                    <td>
-                        ${noteBtn}
-                        <small class="text-muted me-2">${notes ? notes.substring(0, 15) + (notes.length > 15 ? '...' : '') : ''}</small>
-                    </td>
-                </tr>`;
-    });
-    tbody.innerHTML = html;
-    updateStats();
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = Object.keys(CATEGORIES).map(k => {
+    const c = CATEGORIES[k];
+    return `<div class="col-md-4 col-6">
+      <div class="cat-card cat-${k}" onclick="showCategoryStudents('${k}')">
+        <i class="fas ${c.icon} fa-2x"></i>
+        <div class="cat-count">${catCounts[k]||0}</div>
+        <div class="cat-title">${c.name}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (!document.getElementById('categoryDetail').dataset.open) {
+    document.getElementById('categoryDetail').innerHTML = '<p class="text-muted text-center mb-0">اضغط على أي فئة لعرض أسماء الطلاب المصنَّفين ضمنها.</p>';
+  }
 }
 
-function updateStats() {
-    document.getElementById("totalStudents").innerText = students.length;
-    document.getElementById("totalPresent").innerText = attendance.filter(a => a.status === "present").length;
-    document.getElementById("totalLate").innerText = attendance.filter(a => a.status === "late").length;
-    document.getElementById("totalAbsent").innerText = attendance.filter(a => a.status === "absent").length;
+window.showCategoryStudents = function(k){
+  const c = CATEGORIES[k];
+  const list = students.filter(s => {
+    const cl = getStudentClassification(s.id);
+    return cl && (cl.primary === k || (cl.secondary||[]).includes(k));
+  });
+  const box = document.getElementById('categoryDetail');
+  box.dataset.open = "1";
+  box.innerHTML = `<div class="card"><div class="card-header" style="background:${'#2c3e66'}"><i class="fas ${c.icon}"></i> ${c.name} — ${list.length} طالب</div>
+    <div class="card-body">${ list.length ? list.map(s=>{
+      const cl = getStudentClassification(s.id);
+      const isPrimary = cl && cl.primary === k;
+      const lv = cl ? LEVELS[cl.level] : null;
+      return `<span class="student-chip">${s.name} <small>(${s.class})</small>
+        ${isPrimary?'<b class="text-danger">• أساسية</b>':'<span class="text-secondary">• ثانوية</span>'}
+        ${lv?`<span class="level-badge ${lv.cls} ms-1" style="font-size:.7rem">${lv.label}</span>`:''}
+        <a href="#" onclick="openSupportFor(${s.id});return false;" class="ms-1"><i class="fas fa-arrow-left"></i></a></span>`;
+    }).join('') : '<span class="text-muted">لا يوجد طلاب مصنَّفون في هذه الفئة بعد.</span>'}</div></div>`;
+};
+
+/* =============================================================
+   8. الإحصائيات العامة
+   ============================================================= */
+function updateStats(){
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('totalPresent', attendance.filter(a=>a.status==="present").length);
+  set('totalAbsent', attendance.filter(a=>a.status==="absent").length);
 }
 
-// =============================================================
-// 6. دوال التعديل (مع التحقق من المستخدم)
-// =============================================================
+/* =============================================================
+   9. جدول الطلاب
+   ============================================================= */
+function renderStudentsTable(){
+  const tbody = document.getElementById("studentsBody");
+  if (!tbody) return;
+  if (students.length === 0){
+    tbody.innerHTML = "<tr><td colspan='6' class='text-center text-muted'>لا يوجد طلاب حالياً</td></tr>";
+    return;
+  }
+  let html = "";
+  students.forEach((s, idx) => {
+    const cl = getStudentClassification(s.id);
+    const lv = cl ? LEVELS[cl.level] : { label:'لم يُقيَّم', cls:'lv-green' };
+    const actions = currentUser ? `
+      <button class="btn btn-sm btn-outline-primary" onclick="openSupportFor(${s.id})" title="ملف الدعم"><i class="fas fa-folder-open"></i></button>
+      <button class="btn btn-sm btn-outline-warning" onclick="editStudent(${s.id})"><i class="fas fa-edit"></i></button>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent(${s.id})"><i class="fas fa-trash"></i></button>
+    ` : `<button class="btn btn-sm btn-outline-primary" onclick="openSupportFor(${s.id})"><i class="fas fa-folder-open"></i> عرض</button>`;
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="class-badge">${s.class}</span></td>
+      <td>${s.schoolId || '—'}</td>
+      <td><span class="level-badge ${lv.cls}">${lv.label}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
 
-function changeStatus(studentId) {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لتغيير الحالة"); return; }
-    if (!currentDate) { alert("الرجاء اختيار التاريخ أولاً"); return; }
+/* =============================================================
+   10. كشف الحضور
+   ============================================================= */
+function renderAttendance(){
+  const tbody = document.getElementById("attendanceBody");
+  if (!tbody) return;
+  const bulkBar = document.getElementById("bulkStatusBar");
+  const bulkHint = document.getElementById("bulkHint");
 
-    let record = attendance.find(a => a.date === currentDate && a.studentId === studentId);
-    let currentStatus = record ? record.status : "none";
+  if (!currentDate){
+    tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>📌 اختر تاريخ واضغط على 'عرض الكشف'</td></tr>";
+    if (bulkBar) bulkBar.style.display = "none";
+    return;
+  }
 
-    let newStatus = "";
-    if (currentStatus === "none") newStatus = "present";
-    else if (currentStatus === "present") newStatus = "late";
-    else if (currentStatus === "late") newStatus = "absent";
-    else if (currentStatus === "absent") newStatus = "present";
+  let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
+  if (bulkBar) bulkBar.style.display = filtered.length ? "flex" : "none";
+  if (bulkHint) bulkHint.textContent = currentClass ? `الصف: ${currentClass} (${filtered.length} طالب)` : `جميع الطلاب (${filtered.length})`;
 
-    if (record) {
-        record.status = newStatus;
+  if (filtered.length === 0){
+    tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted'>لا يوجد طلاب في هذا الصف</td></tr>";
+    return;
+  }
+
+  const canEdit = currentUser !== null;
+  let html = "";
+
+  filtered.forEach((student, idx) => {
+    let record = attendance.find(a => a.date === currentDate && a.studentId === student.id);
+    let status = record ? record.status : "none";
+    let notes  = record ? (record.notes || "") : "";
+
+    let statusClass, statusText, icon;
+    if (status === "present"){ statusClass="status-present"; statusText="حاضر";   icon="✅"; }
+    else if (status === "late"){ statusClass="status-late";  statusText="تأخر";   icon="⏰"; }
+    else if (status === "absent"){ statusClass="status-absent"; statusText="غائب"; icon="❌"; }
+    else { statusClass="status-none"; statusText="غير مسجل"; icon="⚪"; }
+
+    let statusCell;
+    if (canEdit){
+      statusCell = `
+        <select class="form-select form-select-sm status-select ${statusClass}"
+                onchange="changeStatusDirect(${student.id}, this.value)"
+                title="اختر الحالة">
+          <option value="present" ${status==='present'?'selected':''}>✅ حاضر</option>
+          <option value="late"    ${status==='late'   ?'selected':''}>⏰ تأخر</option>
+          <option value="absent"  ${status==='absent' ?'selected':''}>❌ غائب</option>
+          <option value="none"    ${status==='none'   ?'selected':''}>⚪ غير مسجل</option>
+        </select>`;
     } else {
-        attendance.push({ id: nextAttId++, date: currentDate, studentId: studentId, status: newStatus, notes: "" });
+      statusCell = `<span class="badge p-2 ${statusClass}">${icon} ${statusText}</span>
+        <br><small class="text-muted">🔒 للقراءة فقط</small>`;
     }
 
-    saveData();
-    renderAttendance();
+    const noteBtn = canEdit
+      ? `<button class="btn btn-sm btn-light border" onclick="openNote(${student.id}, '${currentDate}', '${notes.replace(/'/g,"\\'")}')"><i class="fas fa-pen text-primary"></i></button>`
+      : '';
+
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td><strong>${student.name}</strong></td>
+      <td><span class="class-badge">${student.class}</span></td>
+      <td class="text-center">${statusCell}</td>
+      <td>${noteBtn} <small class="text-muted me-2">${notes ? notes.substring(0,15)+(notes.length>15?'...':'') : ''}</small></td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = html;
 }
 
-function openNote(studentId, date, notes) {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لإضافة ملاحظة"); return; }
-    document.getElementById("noteStudentId").value = studentId;
-    document.getElementById("noteDate").value = date;
-    document.getElementById("noteTextInput").value = notes;
-    const modal = new bootstrap.Modal(document.getElementById("noteModal"));
-    modal.show();
+/* =============================================================
+   11. عمليات الحضور
+   ============================================================= */
+function changeStatusDirect(studentId, status){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لتغيير الحالة"); renderAttendance(); return; }
+  if (!currentDate){ alert("الرجاء اختيار التاريخ أولاً"); renderAttendance(); return; }
+
+  let record = attendance.find(a => a.date === currentDate && a.studentId === studentId);
+
+  if (status === "none"){
+    if (record && !record.notes){
+      attendance = attendance.filter(a => !(a.date === currentDate && a.studentId === studentId));
+    } else if (record){
+      record.status = "none";
+    }
+  } else {
+    if (record) record.status = status;
+    else attendance.push({ id: nextAttId++, date: currentDate, studentId, status, notes:"" });
+  }
+
+  saveData();
+  renderAttendance();
 }
 
-function saveNote() {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لحفظ الملاحظة"); return; }
-    const studentId = parseInt(document.getElementById("noteStudentId").value);
-    const date = document.getElementById("noteDate").value;
-    const notes = document.getElementById("noteTextInput").value;
+function setAllStatus(status){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لتغيير الحالة"); return; }
+  if (!currentDate){ alert("الرجاء اختيار التاريخ أولاً"); return; }
 
-    let record = attendance.find(a => a.date === date && a.studentId === studentId);
-    if (record) {
-        record.notes = notes;
+  const filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
+  if (filtered.length === 0){ alert("لا يوجد طلاب لتطبيق التغيير"); return; }
+
+  const labels = { present:"حاضر", late:"تأخر", absent:"غائب", none:"غير مسجل" };
+  const scope  = currentClass ? `صف "${currentClass}"` : "جميع الطلاب";
+
+  if (!confirm(`هل تريد تعيين حالة ${scope} (${filtered.length} طالب) إلى "${labels[status]}"؟\nيمكنك تعديل أي طالب بعد ذلك من القائمة المنسدلة.`)) return;
+
+  filtered.forEach(student => {
+    let record = attendance.find(a => a.date === currentDate && a.studentId === student.id);
+    if (status === "none"){
+      if (record && !record.notes){
+        attendance = attendance.filter(a => !(a.date === currentDate && a.studentId === student.id));
+      } else if (record){
+        record.status = "none";
+      }
     } else {
-        attendance.push({ id: nextAttId++, date: date, studentId: studentId, status: "none", notes: notes });
+      if (record) record.status = status;
+      else attendance.push({ id: nextAttId++, date: currentDate, studentId: student.id, status, notes:"" });
     }
+  });
 
-    saveData();
-    const modalEl = document.getElementById('noteModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
-    renderAttendance();
+  saveData();
+  renderAttendance();
 }
 
-function editStudent(id) {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لتعديل الطالب"); return; }
-    const student = students.find(s => s.id === id);
-    if (student) {
-        document.getElementById("studentId").value = student.id;
-        document.getElementById("studentNameInput").value = student.name;
-        document.getElementById("studentClassInput").value = student.class;
-        const modal = new bootstrap.Modal(document.getElementById("studentModal"));
-        modal.show();
+function openNote(studentId, date, notes){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لإضافة ملاحظة"); return; }
+  document.getElementById("noteStudentId").value = studentId;
+  document.getElementById("noteDate").value = date;
+  document.getElementById("noteTextInput").value = notes;
+  new bootstrap.Modal(document.getElementById("noteModal")).show();
+}
+
+function saveNote(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحفظ الملاحظة"); return; }
+  const studentId = parseInt(document.getElementById("noteStudentId").value);
+  const date = document.getElementById("noteDate").value;
+  const notes = document.getElementById("noteTextInput").value;
+  let record = attendance.find(a => a.date === date && a.studentId === studentId);
+  if (record) record.notes = notes;
+  else attendance.push({ id: nextAttId++, date, studentId, status:"none", notes });
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('noteModal')).hide();
+  renderAttendance();
+}
+
+function initDay(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لتهيئة اليوم"); return; }
+  if (!currentDate){ alert("الرجاء اختيار التاريخ أولاً"); return; }
+
+  let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
+  let added = 0;
+  filtered.forEach(student => {
+    if (!attendance.some(a => a.date === currentDate && a.studentId === student.id)){
+      attendance.push({ id: nextAttId++, date: currentDate, studentId: student.id, status:"absent", notes:"" });
+      added++;
     }
+  });
+
+  if (added > 0){
+    saveData(); renderAttendance();
+    alert(`✅ تم تسجيل ${added} طالب بحالة "غائب" — يمكنك الآن تعليم الحاضرين إما فرديًا أو بزر (الكل حاضر).`);
+  } else {
+    alert("ℹ️ جميع الطلاب مسجلون مسبقاً لهذا التاريخ.");
+  }
 }
 
-function deleteStudent(id) {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لحذف الطالب"); return; }
-    if (confirm("هل أنت متأكد من حذف هذا الطالب؟ سيتم حذف سجلات حضوره أيضاً.")) {
-        students = students.filter(s => s.id !== id);
-        attendance = attendance.filter(a => a.studentId !== id);
-        saveData();
-        renderStudentsTable();
-        renderAttendance();
-    }
+/* =============================================================
+   12. الطلاب (إضافة/تعديل/حذف)
+   ============================================================= */
+function editStudent(id){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لتعديل الطالب"); return; }
+  const s = students.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById("studentId").value = s.id;
+  document.getElementById("studentNameInput").value = s.name || "";
+  document.getElementById("studentSchoolIdInput").value = s.schoolId || "";
+  document.getElementById("studentClassInput").value = s.class || "رابع ب";
+  document.getElementById("studentBirthInput").value = s.birthDate || "";
+  document.getElementById("studentTeacherInput").value = s.teacher || TEACHER_NAME;
+  document.getElementById("studentStartInput").value = s.startDate || "";
+  document.getElementById("studentFollowInput").value = s.followType || "متابعة مهارية";
+  document.getElementById("studentNotesInput").value = s.notes || "";
+  new bootstrap.Modal(document.getElementById("studentModal")).show();
 }
 
-function saveStudent() {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لحفظ الطالب"); return; }
-    const id = document.getElementById("studentId").value;
-    const name = document.getElementById("studentNameInput").value.trim();
-    const sClass = document.getElementById("studentClassInput").value;
-
-    if (!name) { alert("الرجاء إدخال اسم الطالب"); return; }
-
-    if (id === "") {
-        students.push({ id: nextId++, name: name, class: sClass });
-    } else {
-        const index = students.findIndex(s => s.id == id);
-        if (index !== -1) {
-            students[index].name = name;
-            students[index].class = sClass;
-        }
-    }
-
-    saveData();
-    const modalEl = document.getElementById('studentModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
-    renderStudentsTable();
-    renderAttendance();
+function saveStudent(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحفظ الطالب"); return; }
+  const id = document.getElementById("studentId").value;
+  const name = document.getElementById("studentNameInput").value.trim();
+  if (!name){ alert("الرجاء إدخال اسم الطالب"); return; }
+  const data = {
+    name,
+    schoolId: document.getElementById("studentSchoolIdInput").value.trim(),
+    class: document.getElementById("studentClassInput").value,
+    birthDate: document.getElementById("studentBirthInput").value,
+    teacher: document.getElementById("studentTeacherInput").value.trim() || TEACHER_NAME,
+    startDate: document.getElementById("studentStartInput").value,
+    followType: document.getElementById("studentFollowInput").value,
+    notes: document.getElementById("studentNotesInput").value
+  };
+  if (id === "") students.push({ id: nextId++, ...data });
+  else {
+    const i = students.findIndex(s => s.id == id);
+    if (i !== -1) students[i] = { ...students[i], ...data };
+  }
+  students.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide();
+  refreshAll();
 }
 
-function initDay() {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لتهيئة اليوم"); return; }
-    if (!currentDate) { alert("الرجاء اختيار التاريخ أولاً"); return; }
-
-    let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
-    let added = 0;
-
-    filtered.forEach(student => {
-        let exists = attendance.some(a => a.date === currentDate && a.studentId === student.id);
-        if (!exists) {
-            attendance.push({ id: nextAttId++, date: currentDate, studentId: student.id, status: "absent", notes: "" });
-            added++;
-        }
-    });
-
-    if (added > 0) {
-        saveData();
-        renderAttendance();
-        alert(`✅ تمت إضافة ${added} طالب بحالة "غائب" كتهيئة مبدئية.`);
-    } else {
-        alert("ℹ️ جميع الطلاب مسجلون مسبقاً لهذا التاريخ.");
-    }
+function deleteStudent(id){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحذف الطالب"); return; }
+  if (!confirm("هل أنت متأكد من حذف هذا الطالب؟ سيتم حذف كل سجلاته (الحضور، التقييم، البرامج، الجلسات).")) return;
+  students = students.filter(s => s.id !== id);
+  attendance = attendance.filter(a => a.studentId !== id);
+  assessments = assessments.filter(a => a.studentId !== id);
+  programs = programs.filter(p => p.studentId !== id);
+  sessions = sessions.filter(s => s.studentId !== id);
+  evidences = evidences.filter(e => e.studentId !== id);
+  saveData(); refreshAll();
 }
 
-// =============================================================
-// 7. رفع Excel (نفس الكود السابق)
-// =============================================================
-function openExcelModal() {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لرفع الطلاب"); return; }
-    tempStudents = [];
-    document.getElementById("excelPreview").innerHTML = "";
-    document.getElementById("confirmExcelBtn").disabled = true;
-    document.getElementById("excelFile").value = "";
-    const modal = new bootstrap.Modal(document.getElementById("excelModal"));
-    modal.show();
+function deleteAllStudents(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحذف جميع الطلاب"); return; }
+  if (students.length === 0){ alert("لا يوجد طلاب للحذف"); return; }
+  if (!confirm("⚠️ تحذير: سيتم حذف جميع الطلاب وكل السجلات. لا يمكن التراجع.")) return;
+  students=[]; attendance=[]; assessments=[]; programs=[]; sessions=[]; evidences=[]; referrals=[];
+  recomputeIds(); saveData(); refreshAll();
+  alert("✅ تم تفريغ النظام بالكامل.");
 }
 
-function readExcel(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-            if (!rows || rows.length < 2) { alert("الملف فارغ أو غير صالح"); return; }
-            let startRow = 0;
-            if (rows[0] && rows[0][0] && (rows[0][0].toString().includes("اسم") || rows[0][0].toString().includes("Name"))) {
-                startRow = 1;
-            }
-            const newStudents = [];
-            for (let i = startRow; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length < 1) continue;
-                let name = row[0] ? row[0].toString().trim() : "";
-                let className = row[1] ? row[1].toString().trim() : "";
-                name = name.replace(/[0-9]/g, '').trim();
-                if (name === "" || name.length < 2) continue;
-                className = className.toLowerCase();
-                if (className.includes("رابع") || className.includes("4")) {
-                    className = className.includes("د") ? "رابع د" : "رابع ب";
-                } else if (className.includes("خامس") || className.includes("5")) {
-                    className = className.includes("د") ? "خامس د" : "خامس ب";
-                } else if (className.includes("سادس") || className.includes("6")) {
-                    className = className.includes("د") ? "سادس د" : "سادس ب";
-                } else {
-                    className = "رابع ب";
-                }
-                if (!students.find(s => s.name === name && s.class === className)) {
-                    newStudents.push({ name: name, class: className });
-                }
-            }
-            if (newStudents.length === 0) { alert("لم يتم العثور على طلاب جدد."); return; }
-            tempStudents = newStudents;
-            let preview = `<div class="alert alert-success">✅ تم العثور على ${newStudents.length} طالب جديد:</div>
-                          <table class="table table-sm table-bordered"><thead><tr><th>#</th><th>الاسم</th><th>الصف</th></tr></thead><tbody>`;
-            newStudents.forEach((s, idx) => {
-                preview += `<tr><td>${idx + 1}</td><td>${s.name}</td><td>${s.class}</td></tr>`;
-            });
-            preview += `</tbody></table>`;
-            document.getElementById("excelPreview").innerHTML = preview;
-            document.getElementById("confirmExcelBtn").disabled = false;
-        } catch (err) {
-            console.error(err);
-            alert("حدث خطأ أثناء قراءة الملف.");
-        }
+/* =============================================================
+   13. رفع Excel
+   ============================================================= */
+function openExcelModal(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لرفع الطلاب"); return; }
+  tempStudents = [];
+  document.getElementById("excelPreview").innerHTML = "";
+  document.getElementById("confirmExcelBtn").disabled = true;
+  document.getElementById("excelFile").value = "";
+  new bootstrap.Modal(document.getElementById("excelModal")).show();
+}
+
+function readExcel(file){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type:'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
+      if (!rows || rows.length < 2){ alert("الملف فارغ أو غير صالح"); return; }
+      let startRow = 0;
+      if (rows[0] && rows[0][0] && (rows[0][0].toString().includes("اسم") || rows[0][0].toString().includes("Name"))) startRow = 1;
+      const newStudents = [];
+      for (let i = startRow; i < rows.length; i++){
+        const row = rows[i];
+        if (!row || row.length < 1) continue;
+        let name = row[0] ? row[0].toString().trim() : "";
+        let className = row[1] ? row[1].toString().trim() : "";
+        name = name.replace(/[0-9]/g,'').trim();
+        if (name === "" || name.length < 2) continue;
+        const cl = className.toLowerCase();
+        if (cl.includes("رابع") || cl.includes("4")) className = cl.includes("د") ? "رابع د" : "رابع ب";
+        else if (cl.includes("خامس") || cl.includes("5")) className = cl.includes("د") ? "خامس د" : "خامس ب";
+        else if (cl.includes("سادس") || cl.includes("6")) className = cl.includes("د") ? "سادس د" : "سادس ب";
+        else className = "رابع ب";
+        if (!students.find(s => s.name === name && s.class === className))
+          newStudents.push({ name, class: className });
+      }
+      if (newStudents.length === 0){ alert("لم يتم العثور على طلاب جدد."); return; }
+      tempStudents = newStudents;
+      let preview = `<div class="alert alert-success">✅ تم العثور على ${newStudents.length} طالب جديد:</div>
+        <table class="table table-sm table-bordered"><thead><tr><th>#</th><th>الاسم</th><th>الصف</th></tr></thead><tbody>`;
+      newStudents.forEach((s,i)=> preview += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.class}</td></tr>`);
+      preview += `</tbody></table>`;
+      document.getElementById("excelPreview").innerHTML = preview;
+      document.getElementById("confirmExcelBtn").disabled = false;
+    }catch(err){ console.error(err); alert("حدث خطأ أثناء قراءة الملف."); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function confirmExcel(){
+  if (tempStudents.length === 0) return;
+  tempStudents.forEach(s => students.push({ id: nextId++, name: s.name, class: s.class, teacher: TEACHER_NAME }));
+  students.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+  saveData(); refreshAll();
+  alert(`✅ تمت إضافة ${tempStudents.length} طالب بنجاح`);
+  bootstrap.Modal.getInstance(document.getElementById('excelModal')).hide();
+  tempStudents = [];
+}
+
+/* =============================================================
+   14. واجهة الدعم: اختيار الطالب
+   ============================================================= */
+function fillSupportSelect(){
+  const sel = document.getElementById("supportStudentSelect");
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— اختر طالبًا —</option>' +
+    students.map(s => `<option value="${s.id}">${s.name} (${s.class})</option>`).join('');
+  if (activeStudentId) sel.value = activeStudentId;
+}
+
+window.openSupportFor = function(id){
+  activeStudentId = id;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.nav-btn[data-view="support"]').classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-support').classList.add('active');
+  fillSupportSelect();
+  document.getElementById('supportStudentSelect').value = id;
+  renderStudentSupportFile(id);
+};
+
+/* =============================================================
+   15. ملف الدعم الفردي
+   ============================================================= */
+function renderStudentSupportFile(studentId){
+  const s = students.find(x => x.id === studentId);
+  const box = document.getElementById('supportWorkspace');
+  if (!s){ box.innerHTML = '<div class="alert alert-warning">لم يتم العثور على الطالب.</div>'; return; }
+
+  const latest = getLatestAssessment(studentId);
+  const cl = latest ? latest.analysis : null;
+  const lv = cl ? LEVELS[cl.level] : null;
+  const prog = programs.filter(p => p.studentId === studentId).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0];
+  const sess = sessions.filter(x => x.studentId === studentId).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const evs = evidences.filter(x => x.studentId === studentId);
+
+  box.innerHTML = `
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <div>
+          <h4 class="mb-1"><i class="fas fa-user-graduate text-primary"></i> ${s.name}</h4>
+          <div class="text-muted">
+            الصف: <span class="class-badge">${s.class}</span>
+            ${s.schoolId?' • الرقم المدرسي: '+s.schoolId:''}
+            ${s.followType?' • '+s.followType:''}
+          </div>
+        </div>
+        <div class="text-end">
+          ${lv?`<span class="level-badge ${lv.cls}">${lv.label}</span>`:'<span class="level-badge lv-green">لم يُقيَّم</span>'}
+          ${cl&&cl.primary?`<div class="mt-1 small text-muted">الفئة الأساسية: <b>${CATEGORIES[cl.primary].short}</b></div>`:''}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs tab-sub mb-3" id="supTabs">
+    <li class="nav-item"><a class="nav-link active" data-sup="assess" href="#">📝 التقييم الأولي</a></li>
+    <li class="nav-item"><a class="nav-link" data-sup="analysis" href="#">🔎 التحليل والتصنيف</a></li>
+    <li class="nav-item"><a class="nav-link" data-sup="program" href="#">📚 البرنامج العلاجي</a></li>
+    <li class="nav-item"><a class="nav-link" data-sup="sessions" href="#">🗓️ جلسات الدعم (${sess.length})</a></li>
+    <li class="nav-item"><a class="nav-link" data-sup="evidence" href="#">📎 سجل الأدلة (${evs.length})</a></li>
+    <li class="nav-item"><a class="nav-link" data-sup="file" href="#">📄 ملف الطالب والتقرير</a></li>
+  </ul>
+  <div id="supPane"></div>`;
+
+  document.querySelectorAll('[data-sup]').forEach(a => {
+    a.onclick = e => {
+      e.preventDefault();
+      document.querySelectorAll('[data-sup]').forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+      renderSupportPane(a.dataset.sup, studentId);
     };
-    reader.readAsArrayBuffer(file);
+  });
+
+  renderSupportPane('assess', studentId);
 }
 
-function confirmExcel() {
-    if (tempStudents.length === 0) return;
-    tempStudents.forEach(s => {
-        students.push({ id: nextId++, name: s.name, class: s.class });
+function renderSupportPane(pane, studentId){
+  const el = document.getElementById('supPane');
+  if (pane === 'assess') el.innerHTML = buildAssessmentForm(studentId);
+  if (pane === 'analysis') el.innerHTML = buildAnalysisPane(studentId);
+  if (pane === 'program') el.innerHTML = buildProgramPane(studentId);
+  if (pane === 'sessions') el.innerHTML = buildSessionsPane(studentId);
+  if (pane === 'evidence') el.innerHTML = buildEvidencePane(studentId);
+  if (pane === 'file') el.innerHTML = buildFilePane(studentId);
+
+  if (pane === 'assess') bindAssessmentForm(studentId);
+  if (pane === 'analysis') {
+    const b = document.getElementById('analyzeBtn');
+    if (b) b.onclick = () => runAnalysis(studentId);
+  }
+  if (pane === 'program') {
+    const b = document.getElementById('createProgramBtn');
+    if (b) b.onclick = () => createProgram(studentId);
+    const b2 = document.getElementById('newSessionBtn');
+    if (b2) b2.onclick = () => openSessionModal(studentId);
+    const b3 = document.getElementById('exportProgramBtn');
+    if (b3) b3.onclick = () => exportProgram(studentId);
+  }
+  if (pane === 'sessions') {
+    const b = document.getElementById('newSessionBtn2');
+    if (b) b.onclick = () => openSessionModal(studentId);
+  }
+  if (pane === 'evidence') {
+    const b = document.getElementById('addEvidenceBtn');
+    if (b) b.onclick = () => openEvidenceModal(studentId);
+  }
+  if (pane === 'file') {
+    const b = document.getElementById('exportStudentReportBtn');
+    if (b) b.onclick = () => exportStudentReport(studentId);
+  }
+}
+
+/* ---------- تبويب: التقييم الأولي ---------- */
+function buildAssessmentForm(studentId){
+  const latest = getLatestAssessment(studentId);
+  const vals = latest ? latest.indicators : {};
+  const res = latest && latest.results ? latest.results : {};
+  const note = latest ? (latest.freeNote || '') : '';
+
+  let html = `<div class="disclaimer mb-3">
+    <i class="fas fa-circle-info"></i> <b>ملاحظة مهمة:</b> النظام لا يقوم بتشخيص طبي أو نفسي، وإنما يقدّم تصنيفًا تربويًا مبدئيًا
+    بناءً على المؤشرات والملاحظات المسجلة، مع إمكانية التوصية بالإحالة إلى المختص عند الحاجة.
+  </div>
+  <p class="fw-bold text-muted">حدّد درجة ملاحظة كل مؤشر: نادرًا / أحيانًا / متكرر / شديد.</p>`;
+
+  for (const k in CATEGORIES){
+    const c = CATEGORIES[k];
+    html += `<div class="card mb-3">
+      <div class="card-header cat-header" style="background:${catColor(k)}">
+        <i class="fas ${c.icon}"></i> ${c.name}
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0"><tbody>`;
+    c.indicators.forEach(ind => {
+      const v = vals[ind.id] || 0;
+      html += `<tr class="ind-row">
+        <td class="ps-3">${ind.text}</td>
+        <td style="width:190px" class="pe-3">
+          <select class="form-select form-select-sm ind-select" data-ind="${ind.id}">
+            <option value="0" ${v===0?'selected':''}>— لم يلاحظ —</option>
+            <option value="1" ${v===1?'selected':''}>نادرًا</option>
+            <option value="2" ${v===2?'selected':''}>أحيانًا</option>
+            <option value="3" ${v===3?'selected':''}>متكرر</option>
+            <option value="4" ${v===4?'selected':''}>شديد</option>
+          </select>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  html += `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#34495e">📊 نتائج الطالب الفعلية (عند توفرها)</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3"><label class="form-label">دقة القراءة %</label><input type="number" min="0" max="100" id="resRead" class="form-control" value="${res.readAccuracy ?? ''}"></div>
+        <div class="col-md-3"><label class="form-label">فهم المقروء %</label><input type="number" min="0" max="100" id="resComp" class="form-control" value="${res.comprehension ?? ''}"></div>
+        <div class="col-md-3"><label class="form-label">الكتابة %</label><input type="number" min="0" max="100" id="resWrite" class="form-control" value="${res.writing ?? ''}"></div>
+        <div class="col-md-3"><label class="form-label">سرعة القراءة</label>
+          <select id="resSpeed" class="form-select">
+            <option value="">—</option>
+            <option value="منخفضة" ${res.speed==='منخفضة'?'selected':''}>منخفضة</option>
+            <option value="متوسطة" ${res.speed==='متوسطة'?'selected':''}>متوسطة</option>
+            <option value="مناسبة" ${res.speed==='مناسبة'?'selected':''}>مناسبة</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header" style="background:#34495e">✍️ الملاحظة الحرة</div>
+    <div class="card-body">
+      <textarea id="freeNote" class="form-control" rows="3" placeholder="مثال: الطالب يشارك شفهيًا بصورة جيدة، ولكنه يتردد عند القراءة الفردية...">${note}</textarea>
+    </div>
+  </div>
+
+  <button class="btn btn-success btn-lg w-100" id="saveAssessBtn"><i class="fas fa-floppy-disk"></i> حفظ التقييم</button>`;
+
+  return html;
+}
+
+function catColor(k){
+  return {A:'#e74c3c',B:'#8e44ad',C:'#2980b9',D:'#16a085',E:'#d35400',F:'#7f8c8d'}[k];
+}
+
+function bindAssessmentForm(studentId){
+  const btn = document.getElementById('saveAssessBtn');
+  if (!btn) return;
+  btn.onclick = () => {
+    if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحفظ التقييم"); return; }
+    const indicators = {};
+    document.querySelectorAll('.ind-select').forEach(sel => {
+      indicators[sel.dataset.ind] = parseInt(sel.value) || 0;
+    });
+    const results = {
+      readAccuracy: document.getElementById('resRead').value,
+      comprehension: document.getElementById('resComp').value,
+      writing: document.getElementById('resWrite').value,
+      speed: document.getElementById('resSpeed').value
+    };
+    const freeNote = document.getElementById('freeNote').value;
+    const analysis = analyzeIndicators(indicators, results);
+    const date = new Date().toISOString().slice(0,10);
+
+    assessments.push({
+      id: nextAssessId++, studentId, date, indicators, results, freeNote, analysis
     });
     saveData();
-    renderStudentsTable();
-    renderAttendance();
-    alert(`✅ تمت إضافة ${tempStudents.length} طالب بنجاح`);
-    const modalEl = document.getElementById('excelModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
-    tempStudents = [];
+    alert("✅ تم حفظ التقييم وتحليل المؤشرات. انتقل إلى تبويب (التحليل والتصنيف).");
+    renderStudentSupportFile(studentId);
+  };
 }
 
-// =============================================================
-// 8. التقرير العام
-// =============================================================
-function showReport() {
-    const allDates = [...new Set(attendance.map(a => a.date))].sort();
-    reportActiveDays = [...allDates];
-    renderDaysList();
-    loadReport();
-    document.getElementById("reportClass").onchange = () => loadReport();
-    document.getElementById("refreshReportBtn").onclick = () => loadReport();
-    const modal = new bootstrap.Modal(document.getElementById("reportModal"));
-    modal.show();
-}
+/* ---------- تبويب: التحليل ---------- */
+function buildAnalysisPane(studentId){
+  const a = getLatestAssessment(studentId);
+  if (!a) return `<div class="alert alert-warning">لا يوجد تقييم محفوظ. ابدأ من تبويب «التقييم الأولي».</div>`;
+  const an = a.analysis || analyzeIndicators(a.indicators, a.results);
+  const lv = LEVELS[an.level];
 
-function renderDaysList() {
-    const allDates = [...new Set(attendance.map(a => a.date))].sort();
-    const container = document.getElementById("reportDaysList");
-    if (allDates.length === 0) {
-        container.innerHTML = "<div class='text-center text-muted p-3'>لا توجد أيام مسجلة</div>";
-        return;
+  let bars = Object.keys(CATEGORIES).map(k => {
+    const sc = an.scores[k] || 0;
+    const col = sc >= 60 ? '#e74c3c' : sc >= 35 ? '#e67e22' : sc >= 15 ? '#f1c40f' : '#27ae60';
+    return `<div class="mb-2">
+      <div class="d-flex justify-content-between small">
+        <span>${CATEGORIES[k].name}</span><b>${sc}%</b>
+      </div>
+      <div class="progress-thin"><div style="width:${sc}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  const activeInds = [];
+  Object.keys(a.indicators).forEach(id => {
+    if (a.indicators[id] > 0){
+      const cat = id[0];
+      const ind = CATEGORIES[cat].indicators.find(x => x.id === id);
+      activeInds.push({ cat, text: ind ? ind.text : id, v: a.indicators[id] });
     }
-    let html = "<div class='list-group'>";
-    allDates.forEach(date => {
-        const d = new Date(date);
-        const dateStr = d.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-        const isActive = reportActiveDays.includes(date);
-        html += `
-            <div class="list-group-item day-item ${!isActive ? 'inactive' : ''}" onclick="toggleDay('${date}')">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>${dateStr}</span>
-                    <i class="fas ${isActive ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'}"></i>
-                </div>
+  });
+  activeInds.sort((x,y)=> y.v - x.v);
+  const indList = activeInds.map(x =>
+    `<li><span class="class-badge">${CATEGORIES[x.cat].short}</span> ${x.text} — <b>${['','نادرًا','أحيانًا','متكرر','شديد'][x.v]}</b></li>`
+  ).join('') || '<li class="text-muted">لا توجد مؤشرات مسجلة.</li>';
+
+  return `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#2c3e66">🔎 نتيجة التحليل الذكي</div>
+    <div class="card-body">
+      ${an.primary ? `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background:#fdf2f2;border:1px solid #f5c6cb">
+            <div class="small text-muted">الفئة الأساسية</div>
+            <div class="fw-bold" style="color:${catColor(an.primary)};font-size:1.15rem">
+              <i class="fas ${CATEGORIES[an.primary].icon}"></i> ${CATEGORIES[an.primary].name}
             </div>
-        `;
-    });
-    html += "</div>";
-    container.innerHTML = html;
+            <div class="small">درجة الاحتياج: <b>${an.primaryScore}%</b></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background:#f8f9fa;border:1px solid #e3e7ee">
+            <div class="small text-muted">الفئات الثانوية</div>
+            <div class="fw-bold">${ an.secondary.length ? an.secondary.map(k=>CATEGORIES[k].short).join(' • ') : 'لا يوجد' }</div>
+            <div class="mt-2">مستوى الحاجة إلى الدعم: <span class="level-badge ${lv.cls}">${lv.label}</span></div>
+          </div>
+        </div>
+      </div>` : `<div class="alert alert-success">لا توجد مؤشرات تستدعي تصنيفًا حاليًا — متابعة عادية.</div>`}
+
+      <h6 class="fw-bold mt-3">توزيع الدرجات على الفئات الست</h6>
+      ${bars}
+
+      <h6 class="fw-bold mt-4">أبرز المؤشرات المؤثرة في التصنيف</h6>
+      <ul>${indList}</ul>
+
+      <div class="disclaimer mt-3">
+        ⚠️ هذه النتيجة تصنيف تربوي مبدئي وليست تشخيصًا طبيًا، ويوصى بالمتابعة وجمع أدلة إضافية،
+        وإحالة الطالب إلى المختص عند استمرار المؤشرات أو ارتفاع شدتها.
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary btn-lg w-100" id="analyzeBtn"><i class="fas fa-rotate"></i> إعادة تحليل حالة الطالب</button>`;
 }
 
-window.toggleDay = function(date) {
-    if (reportActiveDays.includes(date)) {
-        reportActiveDays = reportActiveDays.filter(d => d !== date);
+function runAnalysis(studentId){
+  const a = getLatestAssessment(studentId);
+  if (!a){ alert("لا يوجد تقييم محفوظ."); return; }
+  a.analysis = analyzeIndicators(a.indicators, a.results);
+  saveData();
+  renderStudentSupportFile(studentId);
+  document.querySelector('[data-sup="analysis"]').click();
+}
+
+/* ---------- تبويب: البرنامج العلاجي ---------- */
+function buildProgramPane(studentId){
+  const a = getLatestAssessment(studentId);
+  if (!a || !a.analysis || !a.analysis.primary)
+    return `<div class="alert alert-warning">لا يوجد تصنيف بعد. أكمل التقييم والتحليل أولًا.</div>`;
+
+  const prog = programs.filter(p => p.studentId === studentId).sort((x,y)=>(y.createdAt||'').localeCompare(x.createdAt||''))[0];
+  if (!prog){
+    return `<div class="alert alert-info">
+      <b>الفئة الأساسية:</b> ${CATEGORIES[a.analysis.primary].name} —
+      <b>مستوى الحاجة:</b> ${LEVELS[a.analysis.level].label}<br>
+      يمكنك الآن إنشاء برنامج علاجي فردي مبني على احتياج الطالب.
+    </div>
+    <button class="btn btn-success btn-lg w-100" id="createProgramBtn"><i class="fas fa-wand-magic-sparkles"></i> إنشاء البرنامج العلاجي</button>`;
+  }
+
+  const weeksHtml = prog.weeks.map(w => `
+    <div class="week-box">
+      <h6>${w.title} — ${w.goal}</h6>
+      <div><b>الأنشطة:</b> ${w.activities.map(x=>`<span class="student-chip">${x}</span>`).join('')}</div>
+      <div class="mt-2 small text-muted"><b>القياس:</b> ${w.measure}</div>
+    </div>`).join('');
+
+  return `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#27ae60">📚 ${prog.title}</div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-3 col-6"><div class="stats-card"><h6>مدة البرنامج</h6><div class="stats-number" style="font-size:1.3rem">${prog.durationWeeks} أسابيع</div></div></div>
+        <div class="col-md-3 col-6"><div class="stats-card"><h6>عدد الجلسات</h6><div class="stats-number" style="font-size:1.3rem">${prog.sessionsPerWeek} أسبوعيًا</div></div></div>
+        <div class="col-md-3 col-6"><div class="stats-card"><h6>مدة الجلسة</h6><div class="stats-number" style="font-size:1.3rem">${prog.sessionMinutes} دقيقة</div></div></div>
+        <div class="col-md-3 col-6"><div class="stats-card"><h6>الفئة</h6><div class="stats-number" style="font-size:1.1rem">${CATEGORIES[prog.categoryKey].short}</div></div></div>
+      </div>
+      <p><b>الهدف العام:</b> ${prog.generalGoal}</p>
+      <h6 class="fw-bold mt-3">الخطة الأسبوعية</h6>
+      ${weeksHtml}
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-primary" id="newSessionBtn"><i class="fas fa-plus"></i> تسجيل جلسة دعم</button>
+        <button class="btn btn-info" id="exportProgramBtn"><i class="fas fa-file-excel"></i> تصدير البرنامج</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function createProgram(studentId){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لإنشاء البرنامج"); return; }
+  const a = getLatestAssessment(studentId);
+  if (!a || !a.analysis || !a.analysis.primary){ alert("لا يوجد تصنيف."); return; }
+  const key = a.analysis.primary;
+  const tmpl = CATEGORIES[key].program;
+
+  const res = a.results || {};
+  let title = tmpl.title;
+  if (key === 'A'){
+    const ra = parseFloat(res.readAccuracy), wr = parseFloat(res.writing);
+    if (!isNaN(ra) && !isNaN(wr) && ra < 70 && wr >= 70) title = 'برنامج دعم القراءة فقط';
+    else if (!isNaN(wr) && !isNaN(ra) && wr < 70 && ra >= 70) title = 'برنامج دعم الكتابة والإملاء';
+    else if (!isNaN(ra) && !isNaN(wr) && ra < 70 && wr < 70) title = 'برنامج دعم القراءة والكتابة معًا';
+  }
+
+  const prog = {
+    id: nextProgramId++, studentId, categoryKey: key,
+    secondaryKeys: a.analysis.secondary || [],
+    title,
+    generalGoal: tmpl.generalGoal,
+    durationWeeks: 4, sessionsPerWeek: 3, sessionMinutes: 20,
+    weeks: JSON.parse(JSON.stringify(tmpl.weeks)),
+    createdAt: new Date().toISOString(), status: 'نشط'
+  };
+  programs.push(prog);
+  saveData();
+  renderStudentSupportFile(studentId);
+  document.querySelector('[data-sup="program"]').click();
+}
+
+/* ---------- تبويب: الجلسات ---------- */
+function buildSessionsPane(studentId){
+  const list = sessions.filter(s => s.studentId === studentId).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if (list.length === 0){
+    return `<div class="alert alert-info">لا توجد جلسات مسجلة بعد.</div>
+      <button class="btn btn-primary" id="newSessionBtn2"><i class="fas fa-plus"></i> تسجيل جلسة دعم</button>`;
+  }
+  const chart = list.map(s => `
+    <div class="d-flex align-items-center mb-1">
+      <div style="width:95px" class="small text-muted">${s.date}</div>
+      <div class="progress-thin flex-grow-1"><div style="width:${s.percent||0}%;background:${(s.percent||0)>=75?'#27ae60':(s.percent||0)>=50?'#e67e22':'#e74c3c'}"></div></div>
+      <div style="width:55px" class="small fw-bold text-end">${s.percent||0}%</div>
+    </div>`).join('');
+
+  const rows = list.map(s => `<tr>
+      <td>${s.date}</td>
+      <td>${s.goal||'—'}</td>
+      <td>${s.result||'—'}</td>
+      <td>${s.improved||'—'}</td>
+      <td>${s.need||'—'}</td>
+      <td><small class="text-muted">${s.notes||''}</small></td>
+    </tr>`).join('');
+
+  return `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#2980b9">📈 تطور الطالب عبر الجلسات</div>
+    <div class="card-body">${chart}</div>
+  </div>
+  <div class="card mb-3">
+    <div class="card-header" style="background:#2c3e66">🗓️ سجل الجلسات (${list.length})</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0">
+          <thead class="table-light"><tr><th>التاريخ</th><th>الهدف</th><th>النتيجة</th><th>مهارة تحسنت</th><th>مهارة تحتاج دعمًا</th><th>ملاحظات</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="newSessionBtn2"><i class="fas fa-plus"></i> تسجيل جلسة دعم</button>`;
+}
+
+function openSessionModal(studentId){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لتسجيل جلسة"); return; }
+  activeStudentId = studentId;
+  document.getElementById("sessionDate").value = new Date().toISOString().slice(0,10);
+  ["sessionGoal","sessionAct1","sessionAct2","sessionAct3","sessionAct4","sessionResult","sessionImproved","sessionNeed","sessionNotes"]
+    .forEach(id => document.getElementById(id).value = "");
+  document.getElementById("sessionPercent").value = 70;
+  const prog = programs.filter(p => p.studentId === studentId).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0];
+  if (prog && prog.weeks[0]){
+    document.getElementById("sessionGoal").value = prog.weeks[0].goal;
+    const acts = prog.weeks[0].activities;
+    for (let i=0;i<4;i++) document.getElementById("sessionAct"+(i+1)).value = acts[i] || "";
+  }
+  new bootstrap.Modal(document.getElementById("sessionModal")).show();
+}
+
+function saveSession(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لحفظ الجلسة"); return; }
+  const sid = activeStudentId;
+  const prog = programs.filter(p => p.studentId === sid).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0];
+  const rec = {
+    id: nextSessionId++, studentId: sid, programId: prog ? prog.id : null,
+    date: document.getElementById("sessionDate").value,
+    goal: document.getElementById("sessionGoal").value,
+    activities: [
+      document.getElementById("sessionAct1").value,
+      document.getElementById("sessionAct2").value,
+      document.getElementById("sessionAct3").value,
+      document.getElementById("sessionAct4").value
+    ].filter(Boolean),
+    result: document.getElementById("sessionResult").value,
+    percent: parseInt(document.getElementById("sessionPercent").value) || 0,
+    improved: document.getElementById("sessionImproved").value,
+    need: document.getElementById("sessionNeed").value,
+    notes: document.getElementById("sessionNotes").value
+  };
+  sessions.push(rec);
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('sessionModal')).hide();
+  renderStudentSupportFile(sid);
+  document.querySelector('[data-sup="sessions"]').click();
+}
+
+/* ---------- تبويب: سجل الأدلة ---------- */
+function buildEvidencePane(studentId){
+  const list = evidences.filter(e => e.studentId === studentId).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const rows = list.map(e => `<tr>
+      <td>${e.date||'—'}</td><td>${e.subject||'—'}</td><td>${e.situation||'—'}</td>
+      <td>${e.skill||'—'}</td><td><small>${e.desc||''}</small></td><td>${e.result||'—'}</td>
+    </tr>`).join('') || `<tr><td colspan="6" class="text-center text-muted">لا توجد أدلة مسجلة.</td></tr>`;
+
+  return `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#34495e">📎 سجل الأدلة والملاحظات الموثقة</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0">
+          <thead class="table-light"><tr><th>التاريخ</th><th>المادة</th><th>الموقف</th><th>المهارة</th><th>وصف ما حدث</th><th>نتيجة الطالب</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-dark" id="addEvidenceBtn"><i class="fas fa-plus"></i> إضافة دليل</button>`;
+}
+
+function openEvidenceModal(studentId){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لإضافة دليل"); return; }
+  activeStudentId = studentId;
+  ["evDate","evSubject","evSituation","evSkill","evDesc","evResult"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("evDate").value = new Date().toISOString().slice(0,10);
+  new bootstrap.Modal(document.getElementById("evidenceModal")).show();
+}
+
+function saveEvidence(){
+  if (!currentUser){ alert("⚠️ يجب تسجيل الدخول"); return; }
+  evidences.push({
+    id: nextEvId++, studentId: activeStudentId,
+    date: document.getElementById("evDate").value,
+    subject: document.getElementById("evSubject").value,
+    situation: document.getElementById("evSituation").value,
+    skill: document.getElementById("evSkill").value,
+    desc: document.getElementById("evDesc").value,
+    result: document.getElementById("evResult").value
+  });
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('evidenceModal')).hide();
+  renderStudentSupportFile(activeStudentId);
+  document.querySelector('[data-sup="evidence"]').click();
+}
+
+/* ---------- تبويب: ملف الطالب والتقرير ---------- */
+function buildFilePane(studentId){
+  const s = students.find(x => x.id === studentId);
+  const a = getLatestAssessment(studentId);
+  const an = a ? a.analysis : null;
+  const prog = programs.filter(p => p.studentId === studentId).sort((x,y)=>(y.createdAt||'').localeCompare(x.createdAt||''))[0];
+  const sess = sessions.filter(x => x.studentId === studentId);
+  const evs = evidences.filter(x => x.studentId === studentId);
+
+  const sorted = sess.slice().sort((x,y)=>(x.date||'').localeCompare(y.date||''));
+  const pre = sorted.length ? (sorted[0].percent||0) : (a && a.results && a.results.readAccuracy ? parseFloat(a.results.readAccuracy) : null);
+  const post = sorted.length ? (sorted[sorted.length-1].percent||0) : null;
+  const diff = (pre !== null && post !== null) ? (post - pre) : null;
+  let recommendation = "لا توجد بيانات كافية لإصدار توصية.";
+  if (diff !== null){
+    if (diff >= 15) recommendation = "تحسن واضح، ويوصى بالاستمرار في المتابعة والانتقال إلى مستوى مهاري أعلى.";
+    else if (diff >= 5) recommendation = "تحسن جزئي، ويوصى بالاستمرار مع تعديل بعض الأنشطة.";
+    else recommendation = "استجابة محدودة للدعم، ويوصى بزيادة شدة الدعم أو تغيير نوع النشاط أو مراجعة فريق الدعم/المختص.";
+  }
+
+  return `
+  <div class="card mb-3">
+    <div class="card-header" style="background:#2c3e66">📄 ملف الدعم الفردي</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="fw-bold">بيانات الطالب</h6>
+          <ul class="list-unstyled">
+            <li><b>الاسم:</b> ${s.name}</li>
+            <li><b>الصف:</b> ${s.class}</li>
+            <li><b>الرقم المدرسي:</b> ${s.schoolId||'—'}</li>
+            <li><b>المعلم:</b> ${s.teacher||TEACHER_NAME}</li>
+            <li><b>نوع المتابعة:</b> ${s.followType||'—'}</li>
+            <li><b>تاريخ بدء المتابعة:</b> ${s.startDate||'—'}</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6 class="fw-bold">التصنيف التربوي المبدئي</h6>
+          ${an && an.primary ? `
+          <ul class="list-unstyled">
+            <li><b>الفئة الأساسية:</b> ${CATEGORIES[an.primary].name}</li>
+            <li><b>الفئات الثانوية:</b> ${an.secondary.length?an.secondary.map(k=>CATEGORIES[k].short).join(' • '):'لا يوجد'}</li>
+            <li><b>مستوى الحاجة:</b> <span class="level-badge ${LEVELS[an.level].cls}">${LEVELS[an.level].label}</span></li>
+          </ul>` : '<p class="text-muted">لم يتم التقييم بعد.</p>'}
+        </div>
+      </div>
+      <hr>
+      <h6 class="fw-bold">البرنامج المطبق</h6>
+      <p>${prog ? prog.title + ` (${prog.durationWeeks} أسابيع، ${prog.sessionsPerWeek} جلسات أسبوعيًا)` : '<span class="text-muted">لا يوجد برنامج.</span>'}</p>
+      <h6 class="fw-bold">عدد جلسات الدعم</h6>
+      <p>${sess.length} جلسة — عدد الأدلة الموثقة: ${evs.length}</p>
+      <h6 class="fw-bold">إعادة القياس</h6>
+      <p>
+        القياس القبلي: <b>${pre !== null ? pre + '%' : '—'}</b> &
+        القياس البعدي: <b>${post !== null ? post + '%' : '—'}</b> &
+        نسبة التحسن: <b class="${diff !== null && diff >= 0 ? 'text-success' : 'text-danger'}">${diff !== null ? diff + ' نقطة مئوية' : '—'}</b>
+      </p>
+      <div class="disclaimer"><b>التوصية النهائية:</b> ${recommendation}</div>
+    </div>
+  </div>
+  <button class="btn btn-success btn-lg w-100" id="exportStudentReportBtn"><i class="fas fa-file-excel"></i> إنشاء تقرير الطالب (Excel)</button>`;
+}
+
+/* =============================================================
+   16. تصدير البرنامج وتقرير الطالب
+   ============================================================= */
+function exportProgram(studentId){
+  const s = students.find(x => x.id === studentId);
+  const prog = programs.filter(p => p.studentId === studentId).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0];
+  if (!prog){ alert("لا يوجد برنامج للتصدير."); return; }
+  const rows = [];
+  rows.push({ "البرنامج": prog.title, "الطالب": s.name, "الصف": s.class });
+  rows.push({ "الهدف العام": prog.generalGoal });
+  rows.push({});
+  rows.push({ "الأسبوع": "الأسبوع", "الهدف": "الهدف", "الأنشطة": "الأنشطة", "القياس": "القياس" });
+  prog.weeks.forEach(w => rows.push({
+    "الأسبوع": w.title, "الهدف": w.goal, "الأنشطة": w.activities.join(' / '), "القياس": w.measure
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows, { skipHeader:true });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "البرنامج");
+  XLSX.writeFile(wb, `برنامج_${s.name}_${TEACHER_NAME}.xlsx`);
+}
+
+function exportStudentReport(studentId){
+  const s = students.find(x => x.id === studentId);
+  const a = getLatestAssessment(studentId);
+  const an = a ? a.analysis : null;
+  const prog = programs.filter(p => p.studentId === studentId).sort((x,y)=>(y.createdAt||'').localeCompare(x.createdAt||''))[0];
+  const sess = sessions.filter(x => x.studentId === studentId).sort((x,y)=>(x.date||'').localeCompare(y.date||''));
+  const today = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  const pre = sess.length ? (sess[0].percent||0) : (a && a.results && a.results.readAccuracy ? parseFloat(a.results.readAccuracy) : null);
+  const post = sess.length ? (sess[sess.length-1].percent||0) : null;
+  const diff = (pre !== null && post !== null) ? (post - pre) : null;
+
+  const rows = [];
+  rows.push({ "البند": `تقرير الطالب — المعلم: ${TEACHER_NAME}`, "القيمة": `تاريخ التقرير: ${today}` });
+  rows.push({ "البند": "اسم الطالب", "القيمة": s.name });
+  rows.push({ "البند": "الصف / الفصل", "القيمة": s.class });
+  rows.push({ "البند": "تاريخ بدء المتابعة", "القيمة": s.startDate || '—' });
+  rows.push({});
+  rows.push({ "البند": "المؤشرات الملحوظة", "القيمة": "" });
+  if (a){
+    Object.keys(a.indicators).forEach(id => {
+      if (a.indicators[id] > 0){
+        const cat = id[0];
+        const ind = CATEGORIES[cat].indicators.find(x=>x.id===id);
+        rows.push({ "البند": CATEGORIES[cat].short, "القيمة": `${ind?ind.text:id} — ${['','نادرًا','أحيانًا','متكرر','شديد'][a.indicators[id]]}` });
+      }
+    });
+  }
+  rows.push({});
+  rows.push({ "البند": "التصنيف التربوي المبدئي", "القيمة": an && an.primary ? CATEGORIES[an.primary].name : '—' });
+  rows.push({ "البند": "الفئات الثانوية", "القيمة": an && an.secondary.length ? an.secondary.map(k=>CATEGORIES[k].short).join(' • ') : 'لا يوجد' });
+  rows.push({ "البند": "مستوى الحاجة", "القيمة": an ? LEVELS[an.level].label : '—' });
+  rows.push({ "البند": "المهارات المستهدفة", "القيمة": an && an.primary ? CATEGORIES[an.primary].program.generalGoal : '—' });
+  rows.push({ "البند": "البرنامج المطبق", "القيمة": prog ? prog.title : '—' });
+  rows.push({ "البند": "عدد جلسات الدعم", "القيمة": sess.length });
+  rows.push({ "البند": "النتيجة القبلية", "القيمة": pre !== null ? pre + '%' : '—' });
+  rows.push({ "البند": "النتيجة البعدية", "القيمة": post !== null ? post + '%' : '—' });
+  rows.push({ "البند": "نسبة التحسن", "القيمة": diff !== null ? diff + ' نقطة مئوية' : '—' });
+  rows.push({ "البند": "الملاحظة الحرة", "القيمة": a ? (a.freeNote||'') : '' });
+  rows.push({ "البند": "التوصية النهائية", "القيمة": diff === null ? 'جمع بيانات إضافية' : diff >= 15 ? 'تحسن واضح — الاستمرار والمتابعة' : diff >= 5 ? 'تحسن جزئي — تعديل الأنشطة' : 'استجابة محدودة — زيادة شدة الدعم أو مراجعة المختص' });
+
+  const ws = XLSX.utils.json_to_sheet(rows, { skipHeader:true });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تقرير الطالب");
+  XLSX.writeFile(wb, `تقرير_${s.name}_${TEACHER_NAME}.xlsx`);
+}
+
+/* =============================================================
+   17. تصدير كشف الحضور اليومي وقائمة الطلاب
+   ============================================================= */
+function exportSheet(){
+  if (!currentDate){ alert("الرجاء اختيار التاريخ أولاً"); return; }
+  let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
+  const exportDate = new Date(currentDate).toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const rows = [];
+  rows.push({ "م":"كشف الحضور اليومي", "الاسم":`المعلم: ${TEACHER_NAME}`, "الصف":`التاريخ: ${exportDate}`, "الحالة":"", "الملاحظات":"" });
+  rows.push({});
+  filtered.forEach((student, idx) => {
+    const rec = attendance.find(a => a.date === currentDate && a.studentId === student.id);
+    let status = "غير مسجل";
+    if (rec) status = rec.status === "present" ? "حاضر" : rec.status === "late" ? "تأخر" : rec.status === "absent" ? "غائب" : "غير مسجل";
+    rows.push({ "م": idx+1, "الاسم": student.name, "الصف": student.class, "الحالة": status, "الملاحظات": rec?.notes || "" });
+  });
+  const ws = XLSX.utils.json_to_sheet(rows, { skipHeader:true });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "الكشف");
+  XLSX.writeFile(wb, `كشف_حضور_${TEACHER_NAME}_${currentDate}.xlsx`);
+}
+
+function exportStudentsList(){
+  const rows = students.map((s,i) => {
+    const cl = getStudentClassification(s.id);
+    return {
+      "م": i+1, "الاسم": s.name, "الصف": s.class,
+      "الرقم المدرسي": s.schoolId || "",
+      "مستوى الدعم": cl ? LEVELS[cl.level].label : "لم يُقيَّم",
+      "الفئة الأساسية": cl && cl.primary ? CATEGORIES[cl.primary].short : ""
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "الطلاب");
+  XLSX.writeFile(wb, `قائمة_الطلاب_${TEACHER_NAME}.xlsx`);
+}
+
+/* =============================================================
+   17.b التقارير المتقدمة (أسبوعي / شهري / مخصص / عام)
+   ============================================================= */
+
+/* تطبيق المدى السريع على حقول التاريخ */
+function applyQuickRange(range){
+  const today = new Date();
+  let from = '', to = '';
+  const iso = d => d.toISOString().slice(0,10);
+  const satOffset = (today.getDay() + 1) % 7; // الأسبوع العربي يبدأ السبت
+
+  if (range === 'thisWeek'){
+    const sat = new Date(today); sat.setDate(today.getDate() - satOffset);
+    const fri = new Date(sat);   fri.setDate(sat.getDate() + 6);
+    from = iso(sat); to = iso(fri);
+  } else if (range === 'lastWeek'){
+    const sat = new Date(today); sat.setDate(today.getDate() - satOffset - 7);
+    const fri = new Date(sat);   fri.setDate(sat.getDate() + 6);
+    from = iso(sat); to = iso(fri);
+  } else if (range === 'thisMonth'){
+    from = iso(new Date(today.getFullYear(), today.getMonth(), 1));
+    to   = iso(new Date(today.getFullYear(), today.getMonth()+1, 0));
+  } else if (range === 'lastMonth'){
+    from = iso(new Date(today.getFullYear(), today.getMonth()-1, 1));
+    to   = iso(new Date(today.getFullYear(), today.getMonth(), 0));
+  } else if (range === 'all'){
+    if (window._fromPicker) window._fromPicker.clear();
+    if (window._toPicker)   window._toPicker.clear();
+    return;
+  }
+  if (from && to){
+    if (window._fromPicker) window._fromPicker.setDate(from, true);
+    if (window._toPicker)   window._toPicker.setDate(to, true);
+  }
+}
+
+/* توليد التقرير حسب النوع */
+function generateAttendanceReport(type){
+  const cls = document.getElementById('reportClassFilter').value;
+  const today = new Date();
+  const iso = d => d.toISOString().slice(0,10);
+  let from = '', to = '', title = '';
+
+  if (type === 'week'){
+    const inFrom = document.getElementById('reportFromDate').value;
+    const inTo   = document.getElementById('reportToDate').value;
+    if (inFrom && inTo){
+      from = inFrom; to = inTo;
     } else {
-        reportActiveDays.push(date);
-        reportActiveDays.sort();
+      const satOffset = (today.getDay() + 1) % 7;
+      const sat = new Date(today); sat.setDate(today.getDate() - satOffset);
+      const fri = new Date(sat);   fri.setDate(sat.getDate() + 6);
+      from = iso(sat); to = iso(fri);
+      if (window._fromPicker) window._fromPicker.setDate(from, true);
+      if (window._toPicker)   window._toPicker.setDate(to, true);
     }
-    renderDaysList();
-    loadReport();
-};
-
-function loadReport() {
-    const selectedClass = document.getElementById("reportClass").value;
-    let filtered = selectedClass ? students.filter(s => s.class === selectedClass) : [...students];
-    if (filtered.length === 0) {
-        document.getElementById("reportTable").innerHTML = "<div class='alert alert-warning'>لا يوجد بيانات</div>";
-        return;
-    }
-    const daysToCount = reportActiveDays.length > 0 ? reportActiveDays : [...new Set(attendance.map(a => a.date))].sort();
-    let table = `<table class="table table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr><th>#</th><th>الطالب</th><th>الصف</th><th>حضر</th><th>تأخر</th><th>غائب</th><th>أيام الدعم</th><th>نسبة الحضور</th></tr>
-                    </thead>
-                    <tbody>`;
-    filtered.forEach((student, idx) => {
-        const recs = attendance.filter(a => a.studentId === student.id && daysToCount.includes(a.date));
-        const present = recs.filter(a => a.status === "present").length;
-        const late = recs.filter(a => a.status === "late").length;
-        const absent = recs.filter(a => a.status === "absent").length;
-        const totalDays = daysToCount.length;
-        const percent = totalDays > 0 ? (((present + late) / totalDays) * 100).toFixed(1) : "0.0";
-        let percentClass = "text-danger";
-        if (percent >= 90) percentClass = "text-success fw-bold";
-        else if (percent >= 75) percentClass = "text-warning";
-        table += `<tr>
-                    <td>${idx + 1}</td>
-                    <td class="fw-bold">${student.name}</td>
-                    <td><span class="class-badge">${student.class}</span></td>
-                    <td class="text-success fw-bold">${present}</td>
-                    <td class="text-warning fw-bold">${late}</td>
-                    <td class="text-danger fw-bold">${absent}</td>
-                    <td class="text-center bg-light fw-bold">${totalDays}</td>
-                    <td class="${percentClass} fw-bold">${percent}%</td>
-                  </tr>`;
-    });
-    table += `</tbody></table>`;
-    document.getElementById("reportTable").innerHTML = table;
-}
-
-// =============================================================
-// 9. التصدير
-// =============================================================
-function exportSheet() {
-    if (!currentDate) { alert("الرجاء اختيار التاريخ أولاً"); return; }
-    let filtered = currentClass ? students.filter(s => s.class === currentClass) : [...students];
-    const exportDate = new Date(currentDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    let exportData = [];
-    exportData.push({ "م": "كشف الحضور اليومي", "الاسم": `المعلم: ${TEACHER_NAME}`, "الصف": `التاريخ: ${exportDate}`, "الحالة": "", "الملاحظات": "" });
-    exportData.push({});
-    filtered.forEach((student, idx) => {
-        let rec = attendance.find(a => a.date === currentDate && a.studentId === student.id);
-        let status = "غير مسجل";
-        if (rec) {
-            if (rec.status === "present") status = "حاضر";
-            else if (rec.status === "late") status = "تأخر";
-            else if (rec.status === "absent") status = "غائب";
-        }
-        exportData.push({ "م": idx + 1, "الاسم": student.name, "الصف": student.class, "الحالة": status, "الملاحظات": rec?.notes || "" });
-    });
-    const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "الكشف");
-    XLSX.writeFile(wb, `كشف_حضور_${TEACHER_NAME}_${currentDate}.xlsx`);
-}
-
-function exportStudentsList() {
-    const exportData = students.map((s, idx) => ({ "م": idx + 1, "الاسم": s.name, "الصف": s.class }));
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "الطلاب");
-    XLSX.writeFile(wb, `قائمة_الطلاب_${TEACHER_NAME}.xlsx`);
-}
-
-document.getElementById("exportReportBtn").onclick = () => {
-    const selectedClass = document.getElementById("reportClass").value;
-    let filtered = selectedClass ? students.filter(s => s.class === selectedClass) : [...students];
-    const daysToCount = reportActiveDays.length > 0 ? reportActiveDays : [...new Set(attendance.map(a => a.date))].sort();
-    const today = new Date().toLocaleDateString('en-CA');
-    const reportDate = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    let exportData = [];
-    exportData.push({ "الطالب": `تقرير الغياب العام - المعلم: ${TEACHER_NAME}`, "الصف": `تاريخ التقرير: ${reportDate} (معتمد على ${daysToCount.length} يوم دعم)` });
-    exportData.push({});
-    exportData.push({ "الطالب": "الطالب", "الصف": "الصف", "حضر": "حضر", "تأخر": "تأخر", "غائب": "غائب", "أيام الدعم": "أيام الدعم", "نسبة الحضور": "نسبة الحضور" });
-    filtered.forEach(student => {
-        const recs = attendance.filter(a => a.studentId === student.id && daysToCount.includes(a.date));
-        const present = recs.filter(a => a.status === "present").length;
-        const late = recs.filter(a => a.status === "late").length;
-        const absent = recs.filter(a => a.status === "absent").length;
-        const totalDays = daysToCount.length;
-        const percent = totalDays > 0 ? (((present + late) / totalDays) * 100).toFixed(1) : 0;
-        exportData.push({ "الطالب": student.name, "الصف": student.class, "حضر": present, "تأخر": late, "غائب": absent, "أيام الدعم": totalDays, "نسبة الحضور": `${percent}%` });
-    });
-    const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "التقرير");
-    XLSX.writeFile(wb, `تقرير_الغياب_${TEACHER_NAME}_${today}.xlsx`);
-};
-
-function deleteAllStudents() {
-    if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لحذف جميع الطلاب"); return; }
-    if (students.length === 0) { alert("لا يوجد طلاب للحذف"); return; }
-    if (confirm("⚠️ تحذير: هل أنت متأكد من حذف جميع الطلاب وجميع سجلات الحضور؟ لا يمكن التراجع.")) {
-        students = [];
-        attendance = [];
-        nextId = 1;
-        nextAttId = 1;
-        saveData();
-        renderStudentsTable();
-        renderAttendance();
-        alert("✅ تم تفريغ النظام بالكامل.");
-    }
-}
-
-function switchTab(tab) {
-    const attendanceTab = document.getElementById("attendanceTab");
-    const studentsTab = document.getElementById("studentsTab");
-    if (tab === "attendance") {
-        attendanceTab.classList.add("show", "active");
-        studentsTab.classList.remove("show", "active");
+    title = 'تقرير أسبوعي';
+  } else if (type === 'month'){
+    const inFrom = document.getElementById('reportFromDate').value;
+    const inTo   = document.getElementById('reportToDate').value;
+    if (inFrom && inTo){
+      from = inFrom; to = inTo;
     } else {
-        studentsTab.classList.add("show", "active");
-        attendanceTab.classList.remove("show", "active");
-        renderStudentsTable();
+      from = iso(new Date(today.getFullYear(), today.getMonth(), 1));
+      to   = iso(new Date(today.getFullYear(), today.getMonth()+1, 0));
+      if (window._fromPicker) window._fromPicker.setDate(from, true);
+      if (window._toPicker)   window._toPicker.setDate(to, true);
     }
+    title = 'تقرير شهري';
+  } else if (type === 'custom'){
+    from = document.getElementById('reportFromDate').value;
+    to   = document.getElementById('reportToDate').value;
+    if (!from || !to){ alert('⚠️ اختر الفترة (من - إلى) أولاً'); return; }
+    if (from > to){ alert('⚠️ تاريخ البداية يجب أن يكون قبل تاريخ النهاية'); return; }
+    title = 'تقرير مخصص';
+  } else if (type === 'all'){
+    from = ''; to = '';
+    title = 'تقرير عام';
+  }
+
+  const data = buildAttendanceReportData(from, to, cls);
+  renderReportPreview(data, title, from, to, cls);
 }
 
-// =============================================================
-// 10. بدء التشغيل
-// =============================================================
-document.addEventListener("DOMContentLoaded", function() {
-    flatpickr("#datePicker", { dateFormat: "Y-m-d", locale: "ar", defaultDate: "today" });
+/* بناء بيانات التقرير */
+function buildAttendanceReportData(from, to, cls){
+  const filteredStudents = cls ? students.filter(s => s.class === cls) : [...students];
+  const studentIds = new Set(filteredStudents.map(s => s.id));
 
-    document.getElementById("viewBtn").onclick = () => {
-        currentDate = document.getElementById("datePicker").value;
-        currentClass = document.getElementById("classFilter").value;
-        if (!currentDate) { alert("الرجاء اختيار التاريخ"); return; }
-        renderAttendance();
+  const records = attendance.filter(a => {
+    if (!studentIds.has(a.studentId)) return false;
+    if (from && a.date < from) return false;
+    if (to   && a.date > to)   return false;
+    return true;
+  });
+
+  const dates = [...new Set(records.map(r => r.date))].sort();
+
+  const stats = filteredStudents.map(s => {
+    const sRecs = records.filter(r => r.studentId === s.id);
+    const present = sRecs.filter(r => r.status === 'present').length;
+    const late    = sRecs.filter(r => r.status === 'late').length;
+    const absent  = sRecs.filter(r => r.status === 'absent').length;
+    const total   = present + late + absent;
+    const rate    = total ? Math.round(((present + late) / total) * 100) : 0;
+    const detail  = {};
+    sRecs.forEach(r => { detail[r.date] = r.status; });
+    return { id:s.id, name:s.name, class:s.class, present, late, absent, total, rate, detail };
+  });
+
+  return { students: stats, dates, totalDays: dates.length, from, to, cls };
+}
+
+/* عرض معاينة التقرير */
+function renderReportPreview(data, title, from, to, cls){
+  const box = document.getElementById('reportPreview');
+  if (!box) return;
+
+  const rangeTxt = (from && to) ? `${from} ← ${to}` : 'كل الفترات المسجلة';
+  const classTxt = cls || 'جميع الصفوف';
+
+  if (data.students.length === 0){
+    box.innerHTML = `<div class="alert alert-warning">لا يوجد طلاب لعرض التقرير.</div>`;
+    return;
+  }
+
+  const totals = data.students.reduce((acc, s) => {
+    acc.present += s.present; acc.late += s.late; acc.absent += s.absent;
+    return acc;
+  }, { present:0, late:0, absent:0 });
+
+  const grandTotal = totals.present + totals.late + totals.absent;
+  const overallRate = grandTotal ? Math.round(((totals.present + totals.late) / grandTotal) * 100) : 0;
+
+  const rows = data.students.map((s, i) => {
+    const rateColor = s.rate >= 85 ? 'text-success' : s.rate >= 70 ? 'text-warning' : 'text-danger';
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${s.name}</b></td>
+      <td><span class="class-badge">${s.class}</span></td>
+      <td class="text-success fw-bold">${s.present}</td>
+      <td class="text-warning fw-bold">${s.late}</td>
+      <td class="text-danger fw-bold">${s.absent}</td>
+      <td>${s.total}</td>
+      <td><span class="fw-bold ${rateColor}">${s.rate}%</span></td>
+    </tr>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-bar"></i> ${title}
+        <span class="report-range-label ms-2">${rangeTxt}</span>
+        <span class="report-range-label">${classTxt}</span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3 col-6"><div class="stats-card"><h6>إجمالي الحضور</h6><div class="stats-number text-success" style="font-size:1.6rem">${totals.present}</div></div></div>
+          <div class="col-md-3 col-6"><div class="stats-card"><h6>إجمالي التأخر</h6><div class="stats-number text-warning" style="font-size:1.6rem">${totals.late}</div></div></div>
+          <div class="col-md-3 col-6"><div class="stats-card"><h6>إجمالي الغياب</h6><div class="stats-number text-danger" style="font-size:1.6rem">${totals.absent}</div></div></div>
+          <div class="col-md-3 col-6"><div class="stats-card"><h6>نسبة الحضور العامة</h6><div class="stats-number" style="font-size:1.6rem;color:#2c3e66">${overallRate}%</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>#</th><th>الطالب</th><th>الصف</th>
+                <th>حاضر</th><th>تأخر</th><th>غائب</th>
+                <th>الإجمالي</th><th>نسبة الحضور</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="text-muted small mb-3">عدد أيام التسجيل في الفترة: <b>${data.totalDays}</b> يوم</div>
+        <button class="btn btn-success w-100" onclick="exportAttendanceReport('${title}')">
+          <i class="fas fa-file-excel"></i> تصدير التقرير (Excel)
+        </button>
+      </div>
+    </div>`;
+}
+
+/* تصدير التقرير إلى Excel */
+function exportAttendanceReport(title){
+  const cls  = document.getElementById('reportClassFilter').value;
+  const from = document.getElementById('reportFromDate').value;
+  const to   = document.getElementById('reportToDate').value;
+
+  let realFrom = from, realTo = to;
+  if (title === 'تقرير أسبوعي' && (!from || !to)){
+    const today = new Date();
+    const satOffset = (today.getDay() + 1) % 7;
+    const sat = new Date(today); sat.setDate(today.getDate() - satOffset);
+    const fri = new Date(sat);   fri.setDate(sat.getDate() + 6);
+    const iso = d => d.toISOString().slice(0,10);
+    realFrom = iso(sat); realTo = iso(fri);
+  } else if (title === 'تقرير شهري' && (!from || !to)){
+    const today = new Date();
+    const iso = d => d.toISOString().slice(0,10);
+    realFrom = iso(new Date(today.getFullYear(), today.getMonth(), 1));
+    realTo   = iso(new Date(today.getFullYear(), today.getMonth()+1, 0));
+  } else if (title === 'تقرير عام'){
+    realFrom = ''; realTo = '';
+  }
+
+  const data = buildAttendanceReportData(realFrom, realTo, cls);
+  const rangeTxt = (realFrom && realTo) ? `${realFrom} إلى ${realTo}` : 'كل الفترات';
+  const classTxt = cls || 'جميع الصفوف';
+
+  const totals = data.students.reduce((acc, s) => {
+    acc.present += s.present; acc.late += s.late; acc.absent += s.absent;
+    return acc;
+  }, { present:0, late:0, absent:0 });
+
+  const summary = [];
+  summary.push({ 'البند': title, 'القيمة': `المعلم: ${TEACHER_NAME}` });
+  summary.push({ 'البند': 'الفترة', 'القيمة': rangeTxt });
+  summary.push({ 'البند': 'الصف', 'القيمة': classTxt });
+  summary.push({ 'البند': 'عدد أيام التسجيل', 'القيمة': data.totalDays });
+  summary.push({ 'البند': 'عدد الطلاب', 'القيمة': data.students.length });
+  summary.push({});
+  summary.push({ 'البند': 'إجمالي الحضور', 'القيمة': totals.present });
+  summary.push({ 'البند': 'إجمالي التأخر', 'القيمة': totals.late });
+  summary.push({ 'البند': 'إجمالي الغياب', 'القيمة': totals.absent });
+  const grand = totals.present + totals.late + totals.absent;
+  summary.push({ 'البند': 'نسبة الحضور العامة %', 'القيمة': grand ? Math.round(((totals.present + totals.late) / grand) * 100) : 0 });
+
+  const details = data.students.map((s, i) => ({
+    'م': i+1,
+    'الاسم': s.name,
+    'الصف': s.class,
+    'حاضر': s.present,
+    'تأخر': s.late,
+    'غائب': s.absent,
+    'الإجمالي': s.total,
+    'نسبة الحضور %': s.rate
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const wsSummary = XLSX.utils.json_to_sheet(summary, { skipHeader:true });
+  const wsDetails = XLSX.utils.json_to_sheet(details);
+  XLSX.utils.book_append_sheet(wb, wsDetails, "تفاصيل الطلاب");
+  XLSX.utils.book_append_sheet(wb, wsSummary, "الملخص");
+
+  const fileFrom = realFrom || 'all';
+  const fileTo   = realTo   || 'all';
+  XLSX.writeFile(wb, `${title}_${classTxt}_${fileFrom}_${fileTo}.xlsx`);
+}
+
+/* =============================================================
+   18. تقرير الفصل
+   ============================================================= */
+function renderClassReport(){
+  const sel = document.getElementById('classReportSelect');
+  if (!sel) return;
+  const cls = sel.value;
+  const list = cls ? students.filter(s => s.class === cls) : [...students];
+  const counts = { normal:0, simple:0, regular:0, intensive:0 };
+  const catCounts = {A:0,B:0,C:0,D:0,E:0,F:0};
+  let notAssessed = 0;
+
+  list.forEach(s => {
+    const cl = getStudentClassification(s.id);
+    if (!cl){ notAssessed++; return; }
+    counts[cl.level] = (counts[cl.level]||0) + 1;
+    if (cl.primary) catCounts[cl.primary] = (catCounts[cl.primary]||0) + 1;
+  });
+
+  const catRows = Object.keys(CATEGORIES).map(k =>
+    `<div class="d-flex justify-content-between align-items-center mb-2">
+      <span><span class="student-chip" style="background:${catColor(k)}22;color:${catColor(k)}">${CATEGORIES[k].name}</span></span>
+      <b>${catCounts[k]} طالب</b>
+    </div>`).join('');
+
+  document.getElementById('classReportBox').innerHTML = `
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="stats-card"><h6>إجمالي الطلاب</h6><div class="stats-number">${list.length}</div></div>
+      </div>
+      <div class="col-md-2 col-6"><div class="stats-card"><h6>متابعة عادية</h6><div class="stats-number text-success" style="font-size:1.4rem">${counts.normal}</div></div></div>
+      <div class="col-md-2 col-6"><div class="stats-card"><h6>دعم بسيط</h6><div class="stats-number text-warning" style="font-size:1.4rem">${counts.simple}</div></div></div>
+      <div class="col-md-2 col-6"><div class="stats-card"><h6>دعم منتظم</h6><div class="stats-number" style="color:#e67e22;font-size:1.4rem">${counts.regular}</div></div></div>
+      <div class="col-md-2 col-6"><div class="stats-card"><h6>دعم مكثف</h6><div class="stats-number text-danger" style="font-size:1.4rem">${counts.intensive}</div></div></div>
+    </div>
+    <div class="mt-4">
+      <h6 class="fw-bold">توزيع الفئات</h6>
+      ${catRows}
+      ${notAssessed?`<div class="text-muted small mt-2">عدد الطلاب غير المقيَّمين: ${notAssessed}</div>`:''}
+    </div>`;
+}
+
+function exportClassReport(){
+  const cls = document.getElementById('classReportSelect').value || 'جميع الصفوف';
+  const list = cls === 'جميع الصفوف' ? [...students] : students.filter(s => s.class === cls);
+  const rows = [];
+  const counts = { normal:0, simple:0, regular:0, intensive:0 };
+  const catCounts = {A:0,B:0,C:0,D:0,E:0,F:0};
+  list.forEach(s => {
+    const cl = getStudentClassification(s.id);
+    if (!cl) return;
+    counts[cl.level]++;
+    if (cl.primary) catCounts[cl.primary]++;
+  });
+  rows.push({ "البند": "تقرير الفصل", "القيمة": cls });
+  rows.push({ "البند": "إجمالي الطلاب", "القيمة": list.length });
+  rows.push({ "البند": "متابعة عادية", "القيمة": counts.normal });
+  rows.push({ "البند": "دعم بسيط", "القيمة": counts.simple });
+  rows.push({ "البند": "دعم منتظم", "القيمة": counts.regular });
+  rows.push({ "البند": "دعم مكثف", "القيمة": counts.intensive });
+  rows.push({});
+  rows.push({ "البند": "توزيع الفئات", "القيمة": "" });
+  Object.keys(CATEGORIES).forEach(k => rows.push({ "البند": CATEGORIES[k].name, "القيمة": catCounts[k] }));
+  const ws = XLSX.utils.json_to_sheet(rows, { skipHeader:true });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تقرير الفصل");
+  XLSX.writeFile(wb, `تقرير_فصل_${cls}_${TEACHER_NAME}.xlsx`);
+}
+
+/* =============================================================
+   19. البحث الذكي
+   ============================================================= */
+function runSmartSearch(){
+  const q = (document.getElementById('smartSearch')?.value || '').trim();
+  const box = document.getElementById('searchResults');
+  if (!box) return;
+  if (!q){ box.innerHTML = '<p class="text-muted mb-0">اكتب كلمة للبحث...</p>'; return; }
+
+  const results = students.filter(s => {
+    const cl = getStudentClassification(s.id);
+    const lvLabel = cl ? LEVELS[cl.level].label : 'لم يُقيَّم';
+    const catLabel = cl && cl.primary ? CATEGORIES[cl.primary].name + ' ' + CATEGORIES[cl.primary].short : '';
+    const hay = [s.name, s.class, s.schoolId||'', lvLabel, catLabel, s.followType||''].join(' ');
+    return hay.includes(q);
+  });
+
+  if (results.length === 0){ box.innerHTML = '<div class="alert alert-warning mb-0">لا توجد نتائج مطابقة.</div>'; return; }
+
+  box.innerHTML = `<div class="table-responsive"><table class="table table-bordered table-hover align-middle">
+    <thead class="table-dark"><tr><th>#</th><th>الاسم</th><th>الصف</th><th>الفئة الأساسية</th><th>مستوى الدعم</th><th></th></tr></thead>
+    <tbody>${results.map((s,i)=>{
+      const cl = getStudentClassification(s.id);
+      return `<tr>
+        <td>${i+1}</td><td><b>${s.name}</b></td><td><span class="class-badge">${s.class}</span></td>
+        <td>${cl&&cl.primary?CATEGORIES[cl.primary].short:'—'}</td>
+        <td><span class="level-badge ${cl?LEVELS[cl.level].cls:'lv-green'}">${cl?LEVELS[cl.level].label:'لم يُقيَّم'}</span></td>
+        <td><button class="btn btn-sm btn-primary" onclick="openSupportFor(${s.id})"><i class="fas fa-folder-open"></i> ملف الدعم</button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+/* =============================================================
+   20. التهيئة والأحداث
+   ============================================================= */
+document.addEventListener("DOMContentLoaded", function(){
+  flatpickr("#datePicker", { dateFormat:"Y-m-d", locale:"ar", defaultDate:"today" });
+  flatpickr("#studentBirthInput", { dateFormat:"Y-m-d", locale:"ar" });
+  flatpickr("#studentStartInput", { dateFormat:"Y-m-d", locale:"ar", defaultDate:"today" });
+  flatpickr("#sessionDate", { dateFormat:"Y-m-d", locale:"ar", defaultDate:"today" });
+  flatpickr("#evDate", { dateFormat:"Y-m-d", locale:"ar", defaultDate:"today" });
+  window._fromPicker = flatpickr("#reportFromDate", { dateFormat:"Y-m-d", locale:"ar" });
+  window._toPicker   = flatpickr("#reportToDate",   { dateFormat:"Y-m-d", locale:"ar" });
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+      if (btn.dataset.view === 'dashboard') renderDashboard();
+      if (btn.dataset.view === 'students') renderStudentsTable();
+      if (btn.dataset.view === 'reports') renderClassReport();
     };
+  });
 
-    document.getElementById("initDayBtn").onclick = initDay;
-    document.getElementById("uploadBtn").onclick = openExcelModal;
-    document.getElementById("reportBtn").onclick = showReport;
-    document.getElementById("addStudentBtn").onclick = () => {
-        if (!currentUser) { alert("⚠️ يجب تسجيل الدخول لإضافة طالب"); return; }
-        document.getElementById("studentId").value = "";
-        document.getElementById("studentNameInput").value = "";
-        const modal = new bootstrap.Modal(document.getElementById("studentModal"));
-        modal.show();
-    };
-    document.getElementById("deleteAllBtn").onclick = deleteAllStudents;
-    document.getElementById("exportListBtn").onclick = exportStudentsList;
-    document.getElementById("exportSheetBtn").onclick = exportSheet;
-    document.getElementById("saveStudentBtn").onclick = saveStudent;
-    document.getElementById("saveNoteBtn").onclick = saveNote;
-    document.getElementById("confirmExcelBtn").onclick = confirmExcel;
+  document.getElementById("viewBtn").onclick = () => {
+    currentDate = document.getElementById("datePicker").value;
+    currentClass = document.getElementById("classFilter").value;
+    if (!currentDate){ alert("الرجاء اختيار التاريخ"); return; }
+    renderAttendance();
+  };
+  document.getElementById("initDayBtn").onclick = initDay;
+  document.getElementById("uploadBtn").onclick = openExcelModal;
+  document.getElementById("exportSheetBtn").onclick = exportSheet;
 
-    const uploadArea = document.getElementById("uploadArea");
-    const fileInput = document.getElementById("excelFile");
-    uploadArea.onclick = () => fileInput.click();
-    uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.style.background = "#e8f5e9"; };
-    uploadArea.ondragleave = () => { uploadArea.style.background = "#f8f9fa"; };
-    uploadArea.ondrop = (e) => {
-        e.preventDefault();
-        uploadArea.style.background = "#f8f9fa";
-        const file = e.dataTransfer.files[0];
-        if (file) readExcel(file);
-    };
-    fileInput.onchange = (e) => { if (e.target.files[0]) readExcel(e.target.files[0]); };
+  document.getElementById("addStudentBtn").onclick = () => {
+    if (!currentUser){ alert("⚠️ يجب تسجيل الدخول لإضافة طالب"); return; }
+    document.getElementById("studentId").value = "";
+    ["studentNameInput","studentSchoolIdInput","studentBirthInput","studentNotesInput"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("studentTeacherInput").value = TEACHER_NAME;
+    document.getElementById("studentStartInput").value = new Date().toISOString().slice(0,10);
+    document.getElementById("studentClassInput").value = "رابع ب";
+    document.getElementById("studentFollowInput").value = "متابعة مهارية";
+    new bootstrap.Modal(document.getElementById("studentModal")).show();
+  };
+  document.getElementById("saveStudentBtn").onclick = saveStudent;
+  document.getElementById("deleteAllBtn").onclick = deleteAllStudents;
+  document.getElementById("exportListBtn").onclick = exportStudentsList;
 
-    document.querySelectorAll("[data-tab]").forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll("[data-tab]").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            switchTab(btn.getAttribute("data-tab"));
-        };
-    });
+  document.getElementById("openStudentFileBtn").onclick = () => {
+    const id = parseInt(document.getElementById("supportStudentSelect").value);
+    if (!id){ alert("اختر طالبًا أولاً"); return; }
+    activeStudentId = id;
+    renderStudentSupportFile(id);
+  };
+  document.getElementById("supportStudentSelect").onchange = (e) => {
+    const id = parseInt(e.target.value);
+    if (id){ activeStudentId = id; renderStudentSupportFile(id); }
+    else document.getElementById('supportWorkspace').innerHTML = '';
+  };
 
-    if (currentUser) {
-        loadData();
-    }
+  document.getElementById("saveNoteBtn").onclick = saveNote;
+  document.getElementById("confirmExcelBtn").onclick = confirmExcel;
+  document.getElementById("saveSessionBtn").onclick = saveSession;
+  document.getElementById("saveEvidenceBtn").onclick = saveEvidence;
+
+  const uploadArea = document.getElementById("uploadArea");
+  const fileInput = document.getElementById("excelFile");
+  uploadArea.onclick = () => fileInput.click();
+  uploadArea.ondragover = e => { e.preventDefault(); uploadArea.style.background = "#e8f5e9"; };
+  uploadArea.ondragleave = () => { uploadArea.style.background = "#f8f9fa"; };
+  uploadArea.ondrop = e => {
+    e.preventDefault(); uploadArea.style.background = "#f8f9fa";
+    const f = e.dataTransfer.files[0]; if (f) readExcel(f);
+  };
+  fileInput.onchange = e => { if (e.target.files[0]) readExcel(e.target.files[0]); };
+
+  document.getElementById("smartSearch").oninput = runSmartSearch;
+  document.getElementById("classReportSelect").onchange = renderClassReport;
+  document.getElementById("buildClassReportBtn").onclick = renderClassReport;
+  document.getElementById("exportClassReportBtn").onclick = exportClassReport;
+
+  if (currentUser) loadData();
 });
 </script>
 </body>
