@@ -50,13 +50,11 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
 .login-loading{display:none;margin-top:10px;}
 .header-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
 .login-icon{font-size:3.5rem;color:#2c3e66;}
-/* main nav */
 .main-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
 .main-nav .nav-btn{background:#fff;border:1px solid #dfe3e8;border-radius:14px;padding:10px 20px;font-weight:bold;color:#2c3e66;cursor:pointer;transition:.2s;font-size:.95rem;}
 .main-nav .nav-btn:hover{background:#eef2f7;}
 .main-nav .nav-btn.active{background:linear-gradient(135deg,#2c3e66,#1a2a4a);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(44,62,102,.3);}
 .view{display:none;}.view.active{display:block;}
-/* categories */
 .cat-card{border-radius:16px;padding:16px;color:#fff;cursor:pointer;transition:.25s;height:100%;box-shadow:0 4px 12px rgba(0,0,0,.12);}
 .cat-card:hover{transform:translateY(-5px);box-shadow:0 10px 22px rgba(0,0,0,.2);}
 .cat-card .cat-count{font-size:2.2rem;font-weight:bold;line-height:1;}
@@ -80,18 +78,15 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
 .week-box h6{color:#2c3e66;font-weight:bold;}
 .student-chip{display:inline-block;background:#eef2f7;border-radius:12px;padding:4px 12px;margin:3px;font-size:.85rem;color:#2c3e66;}
 .disclaimer{background:#fff8e1;border:1px solid #ffe082;border-radius:14px;padding:14px;color:#7d6608;font-size:.9rem;}
-/* ====== شريط تغيير حالة الجميع ====== */
 .bulk-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#eef2f7;border:1px solid #dfe3e8;border-radius:14px;padding:10px 14px;margin-bottom:14px;}
 .bulk-bar .bulk-title{font-weight:bold;color:#2c3e66;margin-inline-end:6px;}
 .bulk-bar .btn{font-weight:bold;}
-/* ====== قائمة حالة الطالب ====== */
 .status-select{font-weight:bold;border:none!important;min-width:150px;cursor:pointer;box-shadow:none!important;}
 .status-select.status-present{background:#28a745!important;color:#fff!important;}
 .status-select.status-late{background:#ffc107!important;color:#856404!important;}
 .status-select.status-absent{background:#dc3545!important;color:#fff!important;}
 .status-select.status-none{background:#e9ecef!important;color:#6c757d!important;}
 .status-select:hover{opacity:.92;}
-/* ====== بطاقة التقارير المتقدمة ====== */
 .report-range-box{background:#f8f9fa;border:1px solid #e3e7ee;border-radius:14px;padding:14px;margin-top:12px;}
 .report-type-btn{font-weight:bold;transition:.2s;}
 .report-type-btn:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(0,0,0,.15);}
@@ -147,7 +142,6 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
     </div>
   </div>
 
-  <!-- شريط التنقل الرئيسي -->
   <div class="main-nav mt-3">
     <div class="nav-btn active" data-view="dashboard"><i class="fas fa-gauge-high"></i> لوحة التحكم</div>
     <div class="nav-btn" data-view="attendance"><i class="fas fa-clipboard-check"></i> الحضور والغياب</div>
@@ -203,7 +197,6 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
           <div class="col-md-2 col-6"><label>📥 تصدير</label><button id="exportSheetBtn" class="btn btn-danger w-100">تصدير الكشف</button></div>
         </div>
 
-        <!-- 🔽 شريط تغيير حالة الجميع -->
         <div id="bulkStatusBar" class="bulk-bar" style="display:none">
           <span class="bulk-title"><i class="fas fa-users-cog"></i> تغيير حالة الجميع:</span>
           <button class="btn btn-success btn-sm" onclick="setAllStatus('present')"><i class="fas fa-check"></i> الكل حاضر</button>
@@ -220,7 +213,6 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
           </table>
         </div>
 
-        <!-- ============ 📊 التقارير المتقدمة (أسبوعي / شهري / مخصص / عام) ============ -->
         <hr class="my-4">
         <h5 class="fw-bold mb-3" style="color:#2c3e66"><i class="fas fa-chart-bar"></i> تقارير الحضور المتقدمة</h5>
 
@@ -275,6 +267,22 @@ body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,sans-serif;padding:20px;}
             <div class="col-md-3 col-6">
               <button class="btn btn-success w-100 report-type-btn" onclick="generateAttendanceReport('all')">
                 <i class="fas fa-globe"></i> تقرير عام
+              </button>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-2">
+            <div class="col-12">
+              <button class="btn btn-dark w-100 report-type-btn" onclick="exportStudentAttendanceSummary()">
+                <i class="fas fa-file-excel"></i> 📋 تصدير ملخص الطلاب (جدول لكل طالب: حضور / غياب / تأخر)
+              </button>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-2">
+            <div class="col-12">
+              <button class="btn btn-secondary w-100 report-type-btn" onclick="exportEachStudentSeparateSheet()">
+                <i class="fas fa-file-excel"></i> 📄 تصدير ملف Excel — ورقة مستقلة لكل طالب (لإرسال فردي)
               </button>
             </div>
           </div>
@@ -1925,13 +1933,11 @@ function exportStudentsList(){
 /* =============================================================
    17.b التقارير المتقدمة (أسبوعي / شهري / مخصص / عام)
    ============================================================= */
-
-/* تطبيق المدى السريع على حقول التاريخ */
 function applyQuickRange(range){
   const today = new Date();
   let from = '', to = '';
   const iso = d => d.toISOString().slice(0,10);
-  const satOffset = (today.getDay() + 1) % 7; // الأسبوع العربي يبدأ السبت
+  const satOffset = (today.getDay() + 1) % 7;
 
   if (range === 'thisWeek'){
     const sat = new Date(today); sat.setDate(today.getDate() - satOffset);
@@ -1958,7 +1964,6 @@ function applyQuickRange(range){
   }
 }
 
-/* توليد التقرير حسب النوع */
 function generateAttendanceReport(type){
   const cls = document.getElementById('reportClassFilter').value;
   const today = new Date();
@@ -2006,7 +2011,6 @@ function generateAttendanceReport(type){
   renderReportPreview(data, title, from, to, cls);
 }
 
-/* بناء بيانات التقرير */
 function buildAttendanceReportData(from, to, cls){
   const filteredStudents = cls ? students.filter(s => s.class === cls) : [...students];
   const studentIds = new Set(filteredStudents.map(s => s.id));
@@ -2035,7 +2039,6 @@ function buildAttendanceReportData(from, to, cls){
   return { students: stats, dates, totalDays: dates.length, from, to, cls };
 }
 
-/* عرض معاينة التقرير */
 function renderReportPreview(data, title, from, to, cls){
   const box = document.getElementById('reportPreview');
   if (!box) return;
@@ -2104,7 +2107,6 @@ function renderReportPreview(data, title, from, to, cls){
     </div>`;
 }
 
-/* تصدير التقرير إلى Excel */
 function exportAttendanceReport(title){
   const cls  = document.getElementById('reportClassFilter').value;
   const from = document.getElementById('reportFromDate').value;
@@ -2169,6 +2171,175 @@ function exportAttendanceReport(title){
   const fileFrom = realFrom || 'all';
   const fileTo   = realTo   || 'all';
   XLSX.writeFile(wb, `${title}_${classTxt}_${fileFrom}_${fileTo}.xlsx`);
+}
+
+/* =============================================================
+   17.c ملخص الطلاب (جدول لكل طالب في ورقة واحدة)
+   ============================================================= */
+function exportStudentAttendanceSummary(){
+  const cls  = document.getElementById('reportClassFilter').value;
+  const from = document.getElementById('reportFromDate').value;
+  const to   = document.getElementById('reportToDate').value;
+
+  const filtered = cls ? students.filter(s => s.class === cls) : [...students];
+  if (filtered.length === 0){ alert('⚠️ لا يوجد طلاب لتصدير الملخص.'); return; }
+
+  const studentIds = new Set(filtered.map(s => s.id));
+  const records = attendance.filter(a => {
+    if (!studentIds.has(a.studentId)) return false;
+    if (from && a.date < from) return false;
+    if (to   && a.date > to)   return false;
+    return true;
+  });
+
+  const dates = [...new Set(records.map(r => r.date))].sort();
+  const rangeTxt = (from && to) ? `${from} إلى ${to}` : 'كل الفترات المسجلة';
+  const classTxt = cls || 'جميع الصفوف';
+
+  const summaryRows = filtered.map((s, i) => {
+    const recs = records.filter(r => r.studentId === s.id);
+    const present = recs.filter(r => r.status === 'present').length;
+    const late    = recs.filter(r => r.status === 'late').length;
+    const absent  = recs.filter(r => r.status === 'absent').length;
+    const total   = present + late + absent;
+    const rate    = total ? Math.round(((present + late) / total) * 100) : 0;
+    return {
+      'م': i+1,
+      'اسم الطالب': s.name,
+      'الصف': s.class,
+      'عدد أيام الحضور': present,
+      'عدد أيام الغياب': absent,
+      'عدد أيام التأخر': late,
+      'الإجمالي': total,
+      'نسبة الحضور %': rate
+    };
+  });
+
+  const detailAOA = [];
+  detailAOA.push(['📋 ملخص الحضور والغياب — جدول لكل طالب']);
+  detailAOA.push([`المعلم: ${TEACHER_NAME}`, '', `الفترة: ${rangeTxt}`, '', `الصف: ${classTxt}`]);
+  detailAOA.push([]);
+
+  filtered.forEach((s, idx) => {
+    const recs = records.filter(r => r.studentId === s.id);
+    const present = recs.filter(r => r.status === 'present').length;
+    const late    = recs.filter(r => r.status === 'late').length;
+    const absent  = recs.filter(r => r.status === 'absent').length;
+    const total   = present + late + absent;
+
+    detailAOA.push([`👤 اسم الطالب: ${s.name}`, '', `الصف: ${s.class}`, '', `إجمالي الأيام: ${total}`]);
+    detailAOA.push(['م', 'عدد أيام الحضور', 'عدد أيام الغياب', 'عدد أيام التأخر', 'نسبة الحضور %']);
+    const rate = total ? Math.round(((present + late) / total) * 100) : 0;
+    detailAOA.push([idx + 1, present, absent, late, rate]);
+    detailAOA.push([]);
+    detailAOA.push([]);
+  });
+
+  const infoRows = [
+    { 'البند': 'نوع التقرير', 'القيمة': 'ملخص الحضور والغياب (جدول لكل طالب)' },
+    { 'البند': 'المعلم', 'القيمة': TEACHER_NAME },
+    { 'البند': 'الفترة', 'القيمة': rangeTxt },
+    { 'البند': 'الصف', 'القيمة': classTxt },
+    { 'البند': 'عدد أيام التسجيل', 'القيمة': dates.length },
+    { 'البند': 'عدد الطلاب', 'القيمة': filtered.length },
+    { 'البند': 'تاريخ الإنشاء', 'القيمة': new Date().toLocaleString('ar-EG') }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+  XLSX.utils.book_append_sheet(wb, wsSummary, "ملخص عام");
+  const wsDetail = XLSX.utils.aoa_to_sheet(detailAOA);
+  XLSX.utils.book_append_sheet(wb, wsDetail, "جدول لكل طالب");
+  const wsInfo = XLSX.utils.json_to_sheet(infoRows);
+  XLSX.utils.book_append_sheet(wb, wsInfo, "معلومات");
+
+  const fileFrom = from || 'all';
+  const fileTo   = to   || 'all';
+  XLSX.writeFile(wb, `ملخص_الحضور_لكل_طالب_${classTxt}_${fileFrom}_${fileTo}.xlsx`);
+
+  alert(`✅ تم إنشاء ملف Excel يحتوي على ${filtered.length} طالب — تحقق من مجلد التنزيلات.`);
+}
+
+/* =============================================================
+   17.d ورقة Excel مستقلة لكل طالب (لإرسال فردي)
+   ============================================================= */
+function exportEachStudentSeparateSheet(){
+  const cls  = document.getElementById('reportClassFilter').value;
+  const from = document.getElementById('reportFromDate').value;
+  const to   = document.getElementById('reportToDate').value;
+
+  const filtered = cls ? students.filter(s => s.class === cls) : [...students];
+  if (filtered.length === 0){ alert('⚠️ لا يوجد طلاب لتصدير الملف.'); return; }
+
+  const studentIds = new Set(filtered.map(s => s.id));
+  const records = attendance.filter(a => {
+    if (!studentIds.has(a.studentId)) return false;
+    if (from && a.date < from) return false;
+    if (to   && a.date > to)   return false;
+    return true;
+  });
+
+  const rangeTxt = (from && to) ? `${from} إلى ${to}` : 'كل الفترات المسجلة';
+  const classTxt = cls || 'جميع الصفوف';
+  const today = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  const wb = XLSX.utils.book_new();
+
+  // ورقة فهرس
+  const indexRows = filtered.map((s, i) => ({
+    'م': i+1,
+    'اسم الطالب': s.name,
+    'الصف': s.class,
+    'اسم الورقة في الملف': safeSheetName(s.name)
+  }));
+  const wsIndex = XLSX.utils.json_to_sheet(indexRows);
+  XLSX.utils.book_append_sheet(wb, wsIndex, "الفهرس");
+
+  // ورقة مستقلة لكل طالب
+  filtered.forEach(s => {
+    const recs = records.filter(r => r.studentId === s.id).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const present = recs.filter(r => r.status === 'present').length;
+    const late    = recs.filter(r => r.status === 'late').length;
+    const absent  = recs.filter(r => r.status === 'absent').length;
+    const total   = present + late + absent;
+    const rate    = total ? Math.round(((present + late) / total) * 100) : 0;
+
+    const aoa = [];
+    aoa.push([`📋 تقرير الحضور والغياب — ${s.name}`]);
+    aoa.push([`المعلم: ${TEACHER_NAME}`]);
+    aoa.push([`الصف: ${s.class}`, '', `الفترة: ${rangeTxt}`]);
+    aoa.push([`تاريخ الإنشاء: ${today}`]);
+    aoa.push([]);
+    aoa.push(['الملخص']);
+    aoa.push(['عدد أيام الحضور', 'عدد أيام الغياب', 'عدد أيام التأخر', 'إجمالي الأيام المسجلة', 'نسبة الحضور %']);
+    aoa.push([present, absent, late, total, rate]);
+    aoa.push([]);
+    aoa.push(['التفاصيل اليومية']);
+    aoa.push(['م', 'التاريخ', 'الحالة', 'الملاحظات']);
+    recs.forEach((r, idx) => {
+      const statusTxt = r.status === 'present' ? '✅ حاضر' : r.status === 'late' ? '⏰ تأخر' : r.status === 'absent' ? '❌ غائب' : '⚪ غير مسجل';
+      aoa.push([idx + 1, r.date, statusTxt, r.notes || '']);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const sheetName = safeSheetName(s.name);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  const fileFrom = from || 'all';
+  const fileTo   = to   || 'all';
+  XLSX.writeFile(wb, `تقارير_فردية_لكل_طالب_${classTxt}_${fileFrom}_${fileTo}.xlsx`);
+
+  alert(`✅ تم إنشاء ملف Excel يحتوي على ورقة مستقلة لكل طالب (${filtered.length} ورقة + الفهرس).`);
+}
+
+function safeSheetName(name){
+  let n = String(name || 'طالب')
+    .replace(/[\\\/\?\*\[\]:]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (n.length > 28) n = n.substring(0, 28);
+  return n || 'طالب';
 }
 
 /* =============================================================
